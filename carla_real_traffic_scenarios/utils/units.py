@@ -1,0 +1,3 @@
+KMH_TO_MPS = 1000. / (60 * 60)
+MPS_TO_KMH = 1. / KMH_TO_MPS
+CM_TO_M = 0.01

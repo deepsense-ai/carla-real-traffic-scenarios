@@ -8,7 +8,8 @@ import pandas as pd
 import pygame
 
 from carla_real_traffic_scenarios import DT
-from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, NGSimTimeslot, \
+from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, \
+    NGSimTimeslot, \
     NGSimDatasets
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.pandas import swap_columns_inplace
@@ -123,33 +124,21 @@ assert DT == 0.1, "I80 dataset is sampled with dt=0.1 which conveniently matches
 
 class Simulator:
 
-    def __init__(self, nb_lanes=4, fps=30):
+    def __init__(self, fps=30):
         self.offset = int(1.5 * LANE_WIDTH_PIXELS)
-        self.screen_size = (80 * LANE_WIDTH_PIXELS, nb_lanes * LANE_WIDTH_PIXELS + self.offset + LANE_WIDTH_PIXELS // 2)
         self.fps = fps  # updates per second
-        self.nb_lanes = nb_lanes  # total number of lanes
         self.frame = 0  # frame index
-        self.lanes = self.build_lanes(nb_lanes)  # create lanes object, list of dicts
         self.env_cars = None  # vehicles list
         self.mean_fps = None
         self.look_ahead = MAX_SPEED * KMH_TO_MPS * METER_TO_PIXELS
         self.user_is_done = None
 
 
-    def build_lanes(self, nb_lanes):
-        return tuple(
-            {'min': self.offset + n * LANE_WIDTH_PIXELS,
-             'mid': self.offset + LANE_WIDTH_PIXELS / 2 + n * LANE_WIDTH_PIXELS,
-             'max': self.offset + (n + 1) * LANE_WIDTH_PIXELS}
-            for n in range(nb_lanes)
-        )
-
-
 class NGSimCar:
     max_a = 40
     max_b = 0.01
 
-    def __init__(self, df, y_offset, screen_w, kernel=0):
+    def __init__(self, df, y_offset, kernel=0):
         k = kernel  # running window size
         self.length_m = df.at[df.index[0], 'Vehicle Length'] * FOOT_TO_METERS
         self.width_m = df.at[df.index[0], 'Vehicle Width'] * FOOT_TO_METERS
@@ -167,19 +156,9 @@ class NGSimCar:
         self._position = self._trajectory[0]
         self._df = df
         self._frame = 0
-        # self._direction = np.array((1, 0), np.float)  # assumes horizontal if initially unknown
         self._direction = self._get('init_direction', 0)
         self._speed = self._get('speed', 0)
-        self._colour = colours['c']
-        self._braked = False
         self.off_screen = self._max_t <= 0
-        self._states = list()
-        self._states_image = list()
-        self._ego_car_image = None
-        self._actions = list()
-        self.screen_w = screen_w
-        self._lane_list = df['Lane Identification'].values
-        self.collisions_per_frame = 0
 
     def step(self, action):  # takes also the parameter action = state temporal derivative
         """
@@ -298,13 +277,12 @@ class NGSimRecording(Simulator):
         """
         self._ngsim_dataset = ngsim_dataset
 
-        super().__init__(nb_lanes=6)  # dlaczego podajemy inne nb_lanes do base niz tutaj (6 != 7)
+        super().__init__()
 
         self._df_by_timeslot: Dict[NGSimTimeslot, pd.DataFrame] = {}
         self._init_df(data_dir=data_dir, x_offset_meters=X_OFFSET_PIXELS * PIXELS_TO_METERS)
 
         self.vehicles_history_ids = None
-        self.nb_lanes = 7
         self.smoothing_window = 15
         self.max_frame = -1
 
@@ -393,7 +371,7 @@ class NGSimRecording(Simulator):
             this_vehicle = df['Vehicle ID'] == vehicle_id
             car_df = df[this_vehicle & now_and_on]
             if len(car_df) < self.smoothing_window + 1: continue
-            car = NGSimCar(car_df, self.offset, self.screen_size[0], self.smoothing_window)
+            car = NGSimCar(car_df, self.offset, self.smoothing_window)
             self.env_cars.append(car)
         self.vehicles_history_ids |= vehicles_ids  # union set operation
 

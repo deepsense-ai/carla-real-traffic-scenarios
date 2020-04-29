@@ -31,8 +31,6 @@ class NGSimLaneChangeScenario(Scenario):
     def __init__(self, ngsim_dataset: NGSimDataset, dataset_mode: DatasetMode, data_dir,
                  client: carla.Client):
         super().__init__(client)
-        LARGE_ENOUGH_SO_ALL_DATA_TAKEN = 10000
-
         self._ngsim_recording = NGSimRecording(
             data_dir=data_dir, ngsim_dataset=ngsim_dataset,
         )

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import carla
 import math
 from typing import NamedTuple, Union
 
@@ -79,6 +80,8 @@ class Vector2(NamedTuple):
             return e.as_vector2()
         elif isinstance(e, Transform):
             return e.position.as_vector2()
+        elif isinstance(e, carla.Location):
+            return Vector2(e.x, e.y)
         else:
             raise ValueError(f"Invalid object type {type(e)}")
 

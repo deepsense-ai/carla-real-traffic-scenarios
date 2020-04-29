@@ -1,7 +1,5 @@
 import logging
 import math
-import os
-import platform
 import sys
 from os.path import isfile
 from typing import List, NamedTuple, Dict
@@ -10,13 +8,13 @@ import numpy as np
 import pandas as pd
 import pygame
 
-from sim2real.carla import ChauffeurCommand, DT
-from sim2real.carla.transforms import Transform, Vector2
-from sim2real.carla.wrappers.action import KMH_TO_MPS
-from sim2real.ngsim_dataset import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, NGSimTimeslot, \
+from carla_real_traffic_scenarios import DT
+from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, NGSimTimeslot, \
     NGSimDatasets
-from sim2real.storage import get_storage
-from sim2real.utils.pandas import swap_columns_inplace
+from carla_real_traffic_scenarios.scenario import ChauffeurCommand
+from carla_real_traffic_scenarios.utils.pandas import swap_columns_inplace
+from carla_real_traffic_scenarios.utils.transforms import Transform, Vector2
+from carla_real_traffic_scenarios.utils.units import KMH_TO_MPS
 
 LANE_WIDTH_METERS = 3.7
 LANE_WIDTH_PIXELS = 24  # pixels / 3.7 m, lane width
@@ -359,9 +357,9 @@ class LaneChangeInstant(NamedTuple):
     @property
     def chauffeur_command(self):
         if self.lane_to < self.lane_from:
-            return ChauffeurCommand.TURN_LEFT
+            return ChauffeurCommand.CHANGE_LANE_LEFT
         elif self.lane_to > self.lane_from:
-            return ChauffeurCommand.TURN_RIGHT
+            return ChauffeurCommand.CHANGE_LANE_RIGHT
         else:
             raise Exception(f"{self.lane_from} != {self.lane_to}")
 
@@ -378,7 +376,10 @@ class LaneChangeInstant(NamedTuple):
 
 class NGSimRecording(Simulator):
 
-    def __init__(self, ngsim_dataset: NGSimDataset, x_max_meters=315, use_display=True):
+    def __init__(self, data_dir: str, ngsim_dataset: NGSimDataset, x_max_meters=315, use_display=True):
+        """
+        :param data_dir: path to the NGSIM extracted 'xy-trajectory' directory
+        """
         self._ngsim_dataset = ngsim_dataset
 
         super().__init__(nb_lanes=6,
@@ -389,19 +390,14 @@ class NGSimRecording(Simulator):
             self.screen = pygame.display.set_mode(self.screen_size)  # set screen size
 
         self._df_by_timeslot: Dict[NGSimTimeslot, pd.DataFrame] = {}
-        self._init_df(x_max_meters=x_max_meters, x_offset_meters=X_OFFSET_PIXELS * PIXELS_TO_METERS)
+        self._init_df(data_dir=data_dir, x_max_meters=x_max_meters, x_offset_meters=X_OFFSET_PIXELS * PIXELS_TO_METERS)
 
         self.vehicles_history_ids = None
         self.nb_lanes = 7
         self.smoothing_window = 15
         self.max_frame = -1
 
-    def _init_df(self, x_max_meters, x_offset_meters):
-        data_dir = os.path.join(get_storage(), 'datasets', 'ppuu', 'xy-trajectories')
-
-        if platform.node() == 'adam-jakubowski':  # for faster development
-            data_dir = '/home/adam/src/rl/xy-trajectories'
-
+    def _init_df(self, data_dir, x_max_meters, x_offset_meters):
         self.lane_change_instants = []
 
         for timeslot in self._ngsim_dataset.timeslots:

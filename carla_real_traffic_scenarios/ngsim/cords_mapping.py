@@ -13,8 +13,8 @@ LOGGER = logging.getLogger(__name__)
 class NGSimToCarlaMapper:
 
     def __init__(self, ngsim_origin: np.ndarray, carla_origin: np.ndarray):
-        assert ngsim_origin.shape == (2,)
-        assert carla_origin.shape == (2,)
+        assert ngsim_origin.shape == (2,), "Expected 2d point"
+        assert carla_origin.shape == (2,), "Expected 2d point"
 
         ngsim_base_vectors = np.array([[1, 0], [0, 1]])
         scale = PIXELS_TO_METERS

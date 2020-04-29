@@ -1,6 +1,5 @@
 import logging
 import math
-import sys
 from os.path import isfile
 from typing import List, NamedTuple, Dict
 
@@ -124,7 +123,7 @@ assert DT == 0.1, "I80 dataset is sampled with dt=0.1 which conveniently matches
 
 class Simulator:
 
-    def __init__(self, use_display=True, nb_lanes=4, fps=30):
+    def __init__(self, nb_lanes=4, fps=30):
         self.offset = int(1.5 * LANE_WIDTH_PIXELS)
         self.screen_size = (80 * LANE_WIDTH_PIXELS, nb_lanes * LANE_WIDTH_PIXELS + self.offset + LANE_WIDTH_PIXELS // 2)
         self.fps = fps  # updates per second
@@ -136,15 +135,6 @@ class Simulator:
         self.look_ahead = MAX_SPEED * KMH_TO_MPS * METER_TO_PIXELS
         self.user_is_done = None
 
-        self.use_display = use_display
-        if self.use_display:  # if display is required
-            pygame.init()  # init PyGame
-            self.screen = pygame.display.set_mode(self.screen_size)  # set screen size
-            self.clock = pygame.time.Clock()  # set up timing
-            self.font = {
-                20: pygame.font.SysFont(None, 20),
-                30: pygame.font.SysFont(None, 30),
-            }
 
     def build_lanes(self, nb_lanes):
         return tuple(
@@ -154,54 +144,12 @@ class Simulator:
             for n in range(nb_lanes)
         )
 
-    def render(self):
-        # measure time elapsed, enforce it to be >= 1/fps
-        fps = int(1 / self.clock.tick(self.fps) * 1e3)
-        self.mean_fps = 0.9 * self.mean_fps + 0.1 * fps if self.mean_fps is not None else fps
-
-        # clear the screen
-        self.screen.fill(colours['k'])
-
-        # draw lanes
-        self._draw_lanes(self.screen)
-
-        for v in self.env_cars:
-            v.draw(self.screen)
-
-        draw_text(self.screen, f'# cars: {len(self.env_cars)}', (10, 2), font=self.font[30])
-        draw_text(self.screen, f'frame #: {self.frame}', (120, 2), font=self.font[30])
-        draw_text(self.screen, f'fps: {self.mean_fps:.0f}', (270, 2), font=self.font[30])
-
-        pygame.display.flip()
-
-        # capture the closing window and mouse-button-up event
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONUP:
-                self._pause()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_d:
-                self.user_is_done = True
-
-    def _draw_lanes(self, surface, offset=0):
-        raise Exception("Abstract method call")
-
-    def _pause(self):
-        pause = True
-        while pause:
-            self.clock.tick(15)
-            for e in pygame.event.get():
-                if e.type == pygame.QUIT:
-                    sys.exit()
-                elif e.type == pygame.MOUSEBUTTONUP or e.type == pygame.KEYDOWN and e.key == pygame.K_SPACE:
-                    pause = False
-
 
 class NGSimCar:
     max_a = 40
     max_b = 0.01
 
-    def __init__(self, df, y_offset, screen_w, font=None, kernel=0):
+    def __init__(self, df, y_offset, screen_w, kernel=0):
         k = kernel  # running window size
         self.length_m = df.at[df.index[0], 'Vehicle Length'] * FOOT_TO_METERS
         self.width_m = df.at[df.index[0], 'Vehicle Width'] * FOOT_TO_METERS
@@ -230,8 +178,6 @@ class NGSimCar:
         self._ego_car_image = None
         self._actions = list()
         self.screen_w = screen_w
-        if font is not None:
-            self._text = self.get_text(self.id, font)
         self._lane_list = df['Lane Identification'].values
         self.collisions_per_frame = 0
 
@@ -250,12 +196,6 @@ class NGSimCar:
         self._direction = direction_vector / (np.linalg.norm(direction_vector) + 1e-3)
 
         self._speed += a * DT
-
-    @staticmethod
-    def get_text(n, font):
-        text = font.render(str(n), True, colours['b'])
-        text_rect = text.get_rect()
-        return text, text_rect
 
     @property
     def front(self):
@@ -278,30 +218,6 @@ class NGSimCar:
     def get_velocity(self) -> Vector2:
         direction = Vector2.from_numpy(self._direction)
         return direction * self._speed
-
-    def draw(self, surface, offset=0):
-        """
-        Draw current car on screen with a specific colour
-        :param surface: PyGame ``Surface`` where to draw
-        :param offset: for representation cropping
-        """
-        x, y = self._position + offset
-        rectangle = (int(x), int(y), self._length, self._width)
-
-        d = self._direction
-
-        _r = draw_rect(surface, self._colour, rectangle, d)
-
-        # Drawing vehicle number
-        if x < self.front[0]:
-            self._text[1].left = x
-        else:
-            self._text[1].right = x
-        self._text[1].top = y - self._width // 2
-        surface.blit(self._text[0], self._text[1])
-
-        if self._braked: self._colour = colours['g']
-        return _r
 
     def _get(self, what, k):
         direction_vector = self._trajectory[k + 1] - self._trajectory[k]
@@ -376,18 +292,13 @@ class LaneChangeInstant(NamedTuple):
 
 class NGSimRecording(Simulator):
 
-    def __init__(self, data_dir: str, ngsim_dataset: NGSimDataset, x_max_meters=315, use_display=True):
+    def __init__(self, data_dir: str, ngsim_dataset: NGSimDataset, x_max_meters=315):
         """
         :param data_dir: path to the NGSIM extracted 'xy-trajectory' directory
         """
         self._ngsim_dataset = ngsim_dataset
 
-        super().__init__(nb_lanes=6,
-                         use_display=use_display)  # dlaczego podajemy inne nb_lanes do base niz tutaj (6 != 7)
-
-        self.screen_size = (85 * LANE_WIDTH_PIXELS, self.nb_lanes * LANE_WIDTH_PIXELS + 5 * LANE_WIDTH_PIXELS)
-        if self.use_display:  # if display is required
-            self.screen = pygame.display.set_mode(self.screen_size)  # set screen size
+        super().__init__(nb_lanes=6)  # dlaczego podajemy inne nb_lanes do base niz tutaj (6 != 7)
 
         self._df_by_timeslot: Dict[NGSimTimeslot, pd.DataFrame] = {}
         self._init_df(data_dir=data_dir, x_max_meters=x_max_meters, x_offset_meters=X_OFFSET_PIXELS * PIXELS_TO_METERS)
@@ -466,9 +377,6 @@ class NGSimRecording(Simulator):
         self.mean_fps = None
         self.time_counter = 0
 
-        if self.use_display:
-            pygame.display.set_caption(f'Traffic simulator, start from frame {self.frame}')
-
         self.user_is_done = False
         self.max_frame = max(self._df_by_timeslot[self._timeslot]['Frame ID'])
         self.vehicles_history_ids = set()
@@ -485,8 +393,7 @@ class NGSimRecording(Simulator):
             this_vehicle = df['Vehicle ID'] == vehicle_id
             car_df = df[this_vehicle & now_and_on]
             if len(car_df) < self.smoothing_window + 1: continue
-            f = self.font[20] if self.use_display else None
-            car = NGSimCar(car_df, self.offset, self.screen_size[0], f, self.smoothing_window)
+            car = NGSimCar(car_df, self.offset, self.screen_size[0], self.smoothing_window)
             self.env_cars.append(car)
         self.vehicles_history_ids |= vehicles_ids  # union set operation
 
@@ -501,33 +408,3 @@ class NGSimRecording(Simulator):
         self.frame += 1
 
         return self.env_cars
-
-    def _draw_lanes(self, surface, offset=0):
-        slope = 0.035
-
-        lanes = self.lanes  # lanes
-
-        s = surface  # screen
-        draw_line = pygame.draw.line  # shortcut
-        w = colours['w']  # colour white
-        gray = colours['gray']
-        sw = self.screen_size[0]  # screen width
-
-        for lane in lanes:
-            draw_line(s, gray, (0, lane['min']), (sw, lane['min']), 1)
-            # draw_dashed_line(s, colours['r'], (0, lane['mid']), (sw, lane['mid']))
-
-        draw_line(s, w, (0, lanes[0]['min']), (sw, lanes[0]['min']), 3)
-        bottom = lanes[-1]['max']
-        draw_line(s, w, (0, bottom), (18 * LANE_WIDTH_PIXELS, bottom), 3)
-        draw_line(s, w, (0, bottom + 29), (18 * LANE_WIDTH_PIXELS, bottom + 29 - slope * 18 * LANE_WIDTH_PIXELS), 3)
-        draw_line(s, gray, (18 * LANE_WIDTH_PIXELS, bottom + 13), (31 * LANE_WIDTH_PIXELS, bottom), 1)
-        # draw_line(s, g, (0, bottom + 42), (60 * LANE_W, bottom + 42 - slope * 60 * LANE_W), 1)
-        draw_line(s, w, (0, bottom + 53), (60 * LANE_WIDTH_PIXELS, bottom + 53 - slope * 60 * LANE_WIDTH_PIXELS), 3)
-        draw_line(s, w, (60 * LANE_WIDTH_PIXELS, bottom + 3), (sw, bottom + 2), 3)
-
-        look_ahead = MAX_SPEED * 1000 / 3600 * METER_TO_PIXELS
-        o = self.offset
-        draw_line(s, (255, 255, 0), (look_ahead, o), (look_ahead, 9.4 * LANE_WIDTH_PIXELS))
-        draw_line(s, (255, 255, 0), (sw - 1.75 * look_ahead, o), (sw - 1.75 * look_ahead, bottom))
-        draw_line(s, (255, 255, 0), (sw - 0.75 * look_ahead, o), (sw - 0.75 * look_ahead, bottom), 5)

@@ -34,7 +34,7 @@ class NGSimLaneChangeScenario(Scenario):
         LARGE_ENOUGH_SO_ALL_DATA_TAKEN = 10000
 
         self._ngsim_recording = NGSimRecording(
-            data_dir=data_dir, ngsim_dataset=ngsim_dataset, use_display=False,
+            data_dir=data_dir, ngsim_dataset=ngsim_dataset,
             x_max_meters=LARGE_ENOUGH_SO_ALL_DATA_TAKEN
         )
         self._ngsim_dataset = ngsim_dataset

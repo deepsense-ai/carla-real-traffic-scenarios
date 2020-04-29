@@ -5,6 +5,7 @@ import random
 import carla
 import numpy as np
 
+from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
 from carla_real_traffic_scenarios.ngsim.cords_mapping import MAPPER_BY_NGSIM_DATASET
 from carla_real_traffic_scenarios.ngsim.ngsim_carla_sync import NGSimVehiclesInCarla
@@ -31,6 +32,16 @@ class NGSimLaneChangeScenario(Scenario):
     def __init__(self, ngsim_dataset: NGSimDataset, dataset_mode: DatasetMode, data_dir,
                  client: carla.Client):
         super().__init__(client)
+
+        settings = self._world.get_settings()
+        if not settings.synchronous_mode:
+            LOGGER.warning("Only synchronous_mode==True supported. Will change to synchronous_mode==True")
+            settings.synchronous_mode = True
+        if settings.fixed_delta_seconds != DT:
+            LOGGER.warning(f"Only fixed_delta_seconds=={DT} supported. Will change to fixed_delta_seconds=={DT}")
+            settings.fixed_delta_seconds = DT
+        self._world.apply_settings(settings)
+
         self._ngsim_recording = NGSimRecording(
             data_dir=data_dir, ngsim_dataset=ngsim_dataset,
         )

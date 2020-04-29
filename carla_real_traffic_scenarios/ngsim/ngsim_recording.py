@@ -292,7 +292,7 @@ class LaneChangeInstant(NamedTuple):
 
 class NGSimRecording(Simulator):
 
-    def __init__(self, data_dir: str, ngsim_dataset: NGSimDataset, x_max_meters=315):
+    def __init__(self, data_dir: str, ngsim_dataset: NGSimDataset):
         """
         :param data_dir: path to the NGSIM extracted 'xy-trajectory' directory
         """
@@ -301,14 +301,14 @@ class NGSimRecording(Simulator):
         super().__init__(nb_lanes=6)  # dlaczego podajemy inne nb_lanes do base niz tutaj (6 != 7)
 
         self._df_by_timeslot: Dict[NGSimTimeslot, pd.DataFrame] = {}
-        self._init_df(data_dir=data_dir, x_max_meters=x_max_meters, x_offset_meters=X_OFFSET_PIXELS * PIXELS_TO_METERS)
+        self._init_df(data_dir=data_dir, x_offset_meters=X_OFFSET_PIXELS * PIXELS_TO_METERS)
 
         self.vehicles_history_ids = None
         self.nb_lanes = 7
         self.smoothing_window = 15
         self.max_frame = -1
 
-    def _init_df(self, data_dir, x_max_meters, x_offset_meters):
+    def _init_df(self, data_dir, x_offset_meters):
         self.lane_change_instants = []
 
         for timeslot in self._ngsim_dataset.timeslots:
@@ -345,7 +345,7 @@ class NGSimRecording(Simulator):
             df = df[~df['Vehicle ID'].isin(timeslot.blacklisted_vehicle_ids)]
 
             # Get valid x coordinate rows
-            valid_x = (df['Local X'] * FOOT_TO_METERS - x_offset_meters).between(0, x_max_meters)
+            valid_x = (df['Local X'] * FOOT_TO_METERS - x_offset_meters).between(0, math.inf)
             df = df[valid_x]
 
             self._df_by_timeslot[timeslot] = df

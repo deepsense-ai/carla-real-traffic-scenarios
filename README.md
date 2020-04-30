@@ -18,3 +18,7 @@ export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.6-py3.6-linux-x86_6
 ```
 
 Code is tested only against CARLA 0.9.6.
+
+## Credits
+
+* Code for interfacing with NGSim dataset based on https://github.com/Atcold/pytorch-PPUU

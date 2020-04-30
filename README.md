@@ -8,3 +8,13 @@ CARLA real traffic scenarios
 - We prepared CARLA maps that mimic real-world roads from NGSim dataset (I80 and US101),
 - we train and benchmark policies on real-world lane-change manuveurs from NGSim dataset,
 - we share code for running NGSim-based scenarios in CARLA. 
+
+# How to run example?
+
+You need to add CARLA python client whl to your pythonpath:
+```
+export CARLA_ROOT=/path/to/your/carla/release
+export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.6-py3.6-linux-x86_64.egg:$PYTHONPATH
+```
+
+Code is tested only against CARLA 0.9.6.

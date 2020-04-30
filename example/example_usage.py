@@ -7,15 +7,18 @@ if __name__ == '__main__':
     carla_client = carla.Client('localhost', 2000)
     carla_client.set_timeout(60)
 
-    data_dir = '/home/adam/src/rl/xy-trajectories'
+    # Download from http://bit.ly/PPUU-data
+    data_dir = '/directory/with/ngsim/data/xy-trajectories'
 
     ngsim_dataset = NGSimDatasets.I80
+    print("Trying to connect to CARLA server. Make sure its up and running.")
     world = carla_client.load_world(ngsim_dataset.carla_map.level_path)
 
     car_blueprint = world.get_blueprint_library().find('vehicle.audi.a2')
     # spawn points doesnt matter - scenario sets up position in reset
     dummy_spawn_point = carla.Transform(carla.Location(0, 0, 500), carla.Rotation())
     ego_car = world.spawn_actor(car_blueprint, dummy_spawn_point)
+    # Setup car sensors. Later use to it make predictions
 
     scenario = NGSimLaneChangeScenario(
         ngsim_dataset, DatasetMode.TRAIN,
@@ -25,7 +28,11 @@ if __name__ == '__main__':
 
     # OPEN-AI gym like loop:
     EPISODES_N = 10
-    for _ in range(EPISODES_N):
+    for ep_ix in range(EPISODES_N):
+        print(f"Running episode {ep_ix}")
+
+        # NGSim scenario places ego_agent in a place of one of real-world vehicles and asks it to replicate
+        # its either LANECHANGE_LEFT or LANECHANGE_RIGHT manuveur.
         scenario.reset(ego_car)
         done = False
         while not done:

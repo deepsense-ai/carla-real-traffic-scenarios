@@ -47,6 +47,7 @@ class NGSimLaneChangeScenario(Scenario):
         )
         self._ngsim_dataset = ngsim_dataset
         self._ngsim_vehicles_in_carla = None
+        self._collision_sensor = None
         self._target_alignment_counter: int
         self._dataset_mode = dataset_mode
 
@@ -65,8 +66,22 @@ class NGSimLaneChangeScenario(Scenario):
             f"Got {len(self._lane_change_instants)} lane change subscenarios in {ngsim_dataset.name}_{dataset_mode.name}")
 
     def reset(self, vehicle: carla.Vehicle):
+        if self._collision_sensor:
+            self._collision_sensor.destroy()
+            self._collision_sensor = None
+        self._collided = False
+
         if self._ngsim_vehicles_in_carla:
             self._ngsim_vehicles_in_carla.close()
+
+        # attack collision sensor
+        blueprint_library = self._world.get_blueprint_library()
+        blueprint = blueprint_library.find('sensor.other.collision')
+        self._collision_sensor = self._world.spawn_actor(blueprint, vehicle.get_transform(), attach_to=vehicle)
+
+        def on_collided(e):
+            self._collided = True
+        self._collision_sensor.listen(on_collided)
 
         self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
 
@@ -131,6 +146,9 @@ class NGSimLaneChangeScenario(Scenario):
         else:  # off road
             done = True
             chauffeur_command = ChauffeurCommand.LANE_FOLLOW
+
+        if self._collided:
+            done = True
 
         self._remaining_steps -= 1
 

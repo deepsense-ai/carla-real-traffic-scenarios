@@ -13,6 +13,7 @@ if __name__ == '__main__':
     ngsim_dataset = NGSimDatasets.I80
     print("Trying to connect to CARLA server. Make sure its up and running.")
     world = carla_client.load_world(ngsim_dataset.carla_map.level_path)
+    print("Connected!")
 
     car_blueprint = world.get_blueprint_library().find('vehicle.audi.a2')
     # spawn points doesnt matter - scenario sets up position in reset
@@ -25,6 +26,8 @@ if __name__ == '__main__':
         data_dir=data_dir, client=carla_client
     )
     scenario.reset(ego_car)
+
+    spectator = world.get_spectator()
 
     # OPEN-AI gym like loop:
     EPISODES_N = 10
@@ -40,6 +43,12 @@ if __name__ == '__main__':
             # ego_car.apply_control(carla.VehicleControl(throttle=1.0, steer=-1.0))
             chauffeur_cmd, reward, done, info = scenario.step(ego_car)
             world.tick()
+
+            birds_eye_view = carla.Transform(
+                ego_car.get_transform().location + carla.Vector3D(x=0, y=0, z=20),
+                carla.Rotation(pitch=-90),
+            )
+            spectator.set_transform(birds_eye_view)
 
     print("Scenario finished!")
     scenario.close()

@@ -2,10 +2,10 @@ import logging
 from typing import List, Optional
 
 import numpy as np
+from more_itertools import unique_justseen
 
 import carla
 from carla_real_traffic_scenarios import FPS
-from carla_real_traffic_scenarios.utils.collections import remove_succesive_duplicates
 from carla_real_traffic_scenarios.utils.transforms import Transform, resample_points, positions_to_transforms
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class TeleportCommandsController:
         assert len(route) > 1
         try:
             positions = [Transform.from_carla_transform(transform).position for transform in route]
-            positions = remove_succesive_duplicates(positions)
+            positions = unique_justseen(positions)
             positions = resample_points(positions, step_m=step_m)
             route = positions_to_transforms(positions)
             return route

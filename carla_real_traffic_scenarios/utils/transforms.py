@@ -5,10 +5,8 @@ from typing import NamedTuple, Union, List
 
 import carla
 import numpy as np
-from more_itertools import windowed
+from more_itertools import windowed, unique_justseen
 from scipy import interpolate
-
-from sim2real.utils.collections import assert_no_succesive_duplicates
 
 
 class Vector3(NamedTuple):
@@ -201,7 +199,7 @@ def resample_points(positions: List[Union[Vector2, Vector3]], step_m=1) -> List[
     positions = [convert_to_vector2(p) for p in positions]
     points = np.array([p.as_numpy() for p in positions])
 
-    assert_no_succesive_duplicates(positions)  # breaks resampling code
+    assert len(list(unique_justseen(positions))) == len(positions)  # breaks resampling code
 
     x, y = zip(*points)
 

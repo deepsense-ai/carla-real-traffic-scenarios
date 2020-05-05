@@ -3,13 +3,12 @@ from typing import List
 
 import numpy as np
 import random
-from more_itertools import windowed
+from more_itertools import windowed, unique_justseen
 from operator import eq
 
 import carla
 from carla_real_traffic_scenarios.artificial_lane_change.controller import TeleportCommandsController
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand, Scenario, ScenarioStepResult
-from carla_real_traffic_scenarios.utils.collections import remove_succesive_duplicates
 from carla_real_traffic_scenarios.utils.topology import get_lane_id, Topology
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3, Vector2, distance_between_on_plane
 
@@ -67,7 +66,7 @@ class ArtificialLaneChangeScenario(Scenario):
             backward_route + forward_route
             for backward_route in backward_routes for forward_route in forward_routes
         ]
-        return [remove_succesive_duplicates(r, equal_fn=eq) for r in routes]
+        return [list(unique_justseen(r)) for r in routes]
 
     def _find_lane_waypoints(self, cmd_for_changing_lane, start_location: carla.Location):
         self._start_lane_waypoint = self._world_map.get_waypoint(start_location)

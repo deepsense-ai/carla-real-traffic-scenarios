@@ -41,7 +41,7 @@ FINAL_POINT_DISTANCE_M = 100
 class ArtificialLaneChangeScenario(Scenario):
 
     def __init__(self, *, client: carla.Client, cmd_for_changing_lane=ChauffeurCommand.CHANGE_LANE_LEFT,
-                 env_vehicles_route_length_m=400, speed_range_token: str, no_columns=True):
+                 env_vehicles_route_length_m=300, speed_range_token: str, no_columns=True):
         super().__init__(client=client)
         start_point = Transform(Vector3(-144.4, -22.41, 0), Vector2(-1.0, 0.0))
         self._find_lane_waypoints(cmd_for_changing_lane, start_point.position.as_carla_location())

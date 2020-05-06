@@ -2,6 +2,7 @@ import typing
 from abc import abstractmethod
 from typing import TypeVar, Callable, List
 
+from more_itertools import windowed
 from typing_extensions import Protocol
 
 T = TypeVar("T")

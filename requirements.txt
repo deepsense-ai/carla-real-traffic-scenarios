@@ -1,4 +1,7 @@
-numpy==1.16.3
-pandas==0.25.3
-opencv-python==4.0.0.21
-typing-extensions==3.7.4.2
+numpy>=1.16.3
+scipy>=1.2.1
+pandas>=0.25.3
+opencv-python>=4.0.0.21
+typing-extensions>=3.7.4.2
+more-itertools>=8.1.0
+networkx>=2.3

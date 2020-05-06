@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import carla
 import math
-from typing import NamedTuple, Union
+from typing import NamedTuple, Union, List
 
+import carla
 import numpy as np
+from more_itertools import windowed, unique_justseen
+from scipy import interpolate
 
 
 class Vector3(NamedTuple):
@@ -131,6 +133,14 @@ class Vector2(NamedTuple):
             y=np.sin(radian),
         )
 
+    def normalized(self) -> 'Vector2':
+        v = self.as_numpy()
+        norm = np.linalg.norm(v, ord=1)
+        if norm == 0:
+            norm = np.finfo(v.dtype).eps
+        normalized_v = v / norm
+        return Vector2.from_numpy(normalized_v)
+
     def as_numpy(self) -> np.ndarray:
         return np.array([self.x, self.y])
 
@@ -171,3 +181,59 @@ def distance_between_on_plane(p1: Union[Transform, Vector2, Vector3], p2: Union[
     p1 = Vector2.convert_from(p1)
     p2 = Vector2.convert_from(p2)
     return np.linalg.norm(p1.as_numpy() - p2.as_numpy())
+
+
+def convert_to_vector2(p: Union[Vector3, Vector2, Transform, np.ndarray]) -> Vector2:
+    if isinstance(p, Transform):
+        return p.position.as_vector2()
+    elif isinstance(p, Vector3):
+        return p.as_vector2()
+    elif isinstance(p, np.ndarray):
+        return Vector2.from_numpy(p)
+    else:
+        return p
+
+
+def resample_points(positions: List[Union[Vector2, Vector3]], step_m=1) -> List[Vector2]:
+    """Interpolates points so they are evenly spaced (1 meter between each point)"""
+    positions = [convert_to_vector2(p) for p in positions]
+    points = np.array([p.as_numpy() for p in positions])
+
+    assert len(list(unique_justseen(positions))) == len(positions)  # breaks resampling code
+
+    x, y = zip(*points)
+
+    DEGREE_ONE_SO_WE_HAVE_POLYLINE = 1
+    f, u = interpolate.splprep([x, y], s=0, k=DEGREE_ONE_SO_WE_HAVE_POLYLINE, per=0)
+
+    distance = np.sqrt(np.sum(np.diff(points, axis=0) ** 2, axis=1)).sum()
+    linspace = np.linspace(0, 1, int(distance / step_m))
+    x, y = interpolate.splev(linspace, f)
+
+    points_fitted = np.stack([x, y], axis=1)
+
+    return [Vector2.from_numpy(p) for p in points_fitted]
+
+
+def positions_to_transforms(positions: List[Union[Vector3, Vector2]]) -> List[Transform]:
+    """Add orientation data to positions using normals to determine angles"""
+    positions = [convert_to_vector2(w) for w in positions]
+
+    assert len(positions) > 1
+
+    guarded_positions = [
+        positions[0] - (positions[1] - positions[0]),
+        *positions,
+        positions[-1] + (positions[-1] - positions[-2]),
+    ]
+    smooth_orientations = []
+    for p1, p2, p3 in windowed(guarded_positions, 3):
+        dir_1 = (p2 - p1).normalized()
+        dir_2 = (p3 - p2).normalized()
+        tangent_dir = (dir_1 + dir_2).normalized()
+        smooth_orientations.append(tangent_dir)
+
+    assert len(positions) == len(smooth_orientations), \
+        f"Got {len(positions)} and {len(smooth_orientations)}"
+
+    return [Transform(p.to_vector3(0.), o) for (p, o) in zip(positions, smooth_orientations)]

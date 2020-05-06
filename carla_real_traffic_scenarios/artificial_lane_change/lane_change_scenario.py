@@ -190,11 +190,8 @@ class ArtificialLaneChangeScenario(Scenario):
             chauffeur_cmd = ChauffeurCommand.LANE_FOLLOW
             done = self._done_counter == 0
 
-        reward = self._calculate_reward(done)
+        reward = int(done and not offroad)
         return ScenarioStepResult(chauffeur_cmd, reward, done, info)
-
-    def _calculate_reward(self, done):
-        return int(done)
 
     def _calculate_errors(self, current_lane_transform, ego_vehicle_transform):
         crosstrack_error = distance_between_on_plane(ego_vehicle_transform, current_lane_transform)

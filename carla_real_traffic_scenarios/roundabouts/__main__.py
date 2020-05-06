@@ -1,5 +1,5 @@
 import carla
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import ExitingRoundaboutScenario
+from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import RoundaboutExitingScenario
 from sim2real.carla import DT
 synch = True
 def set_birds_eye_view_spectator(
@@ -27,21 +27,21 @@ bp.set_attribute("role_name", "hero")
 agent_vehicle = world.spawn_actor(bp, map.get_spawn_points()[0])
 
 spectator = world.get_spectator()
-scenario = ExitingRoundaboutScenario(client)
+set_birds_eye_view_spectator(spectator, carla.Location(), above=80)
+
+scenario = RoundaboutExitingScenario(client)
 scenario.reset(agent_vehicle)
 if synch:
     world.tick()
+
 done = False
-
-
 try:
     while True:
         result = scenario.step(agent_vehicle)
-        if result.done:
-            scenario.reset(agent_vehicle)
         if synch:
             world.tick()
-        # set_birds_eye_view_spectator(spectator, scenario.dummy_vehicle.get_location(), above=10)
+        if result.done:
+            scenario.reset(agent_vehicle)
 finally:
     settings = world.get_settings()
     settings.synchronous_mode = False

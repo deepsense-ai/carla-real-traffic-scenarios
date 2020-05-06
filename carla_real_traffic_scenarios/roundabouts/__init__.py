@@ -3,8 +3,7 @@ import math
 import random
 from enum import Enum, auto
 from pathlib import Path
-from typing import NamedTuple, List
-
+from typing import NamedTuple, List, Optional
 
 import carla
 from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.town03_roundabout_nodes import \
@@ -15,15 +14,15 @@ from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.scenario imp
     ScenarioStepResult,
 )
 from sim2real.birdview.__main__ import get_speed
-from sim2real.carla import ChauffeurCommand
+from sim2real.carla import ChauffeurCommand, FPS
 import numpy as np
 
+from sim2real.carla.maps import CarlaMaps
 from sim2real.carla.maps.assets import markings
 from sim2real.carla.maps.assets.actor_manager import ActorManager
 from sim2real.carla.maps.assets.utils import clone_location
-
-
-
+from sim2real.carla.scenarios.carlascenario_adapter import CarlaScenarioAdapter
+from sim2real.carla.server import CarlaServerController
 
 
 def circle_points(r, n):
@@ -55,11 +54,12 @@ SPAWN_DRIVING = True
 TELEPORTATION_DRIVING = False
 AUTOPILOT_DRIVING = not TELEPORTATION_DRIVING
 
-MAX_NUM_STEPS_TO_REACH_CHECKPOINT = 200
+MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 
-
-class ExitingRoundaboutScenario:
+from carla_real_traffic_scenarios.scenario import Scenario
+class RoundaboutExitingScenario(Scenario):
     def __init__(self, client):
+        super().__init__(client)
         self.num_actors_to_spawn = random.randrange(20, 40)
         self._client = client
         self._world = client.get_world()
@@ -95,17 +95,24 @@ class ExitingRoundaboutScenario:
 
         self.static_actors_manager = ActorManager(client)
         self.driving_actors_manager = ActorManager(client)
-
         self.steps_to_reach_next_checkpoint = MAX_NUM_STEPS_TO_REACH_CHECKPOINT
 
-    def teleport_to_lru_location(self, actor):
-        least_used_idx = np.argmin(self.respawn_usage_counter)
-        spawn_point = self.driving_actors_respawn_markings[least_used_idx].transform
-        actor.set_transform(spawn_point)
-        self.respawn_usage_counter[least_used_idx] += 1
+    def _respawn_randomly(self, actor) -> Optional[carla.Actor]:
+        # least_used_idx = np.argmin(self.respawn_usage_counter)
+        # spawn_point = self.driving_actors_respawn_markings[least_used_idx].transform
+        # actor.set_transform(spawn_point)
+        # self.respawn_usage_counter[least_used_idx] += 1
+
+        actor.destroy()
+        self.driving_actors_manager.spawned.remove(actor.id)
+
+        blueprint = random.choice(self._car_blueprints)
+        spawn_point = random.choice(self.driving_actors_respawn_markings).transform
+        actor = self.driving_actors_manager.spawn(spawn_point, blueprint)
+        return actor
 
     def _build_checkpoint_route(
-        self, start_node: RoundaboutNode, nth_exit_to_take: int
+            self, start_node: RoundaboutNode, nth_exit_to_take: int
     ) -> List[RouteCheckpoint]:
         route = []
         current_node = start_node
@@ -141,7 +148,7 @@ class ExitingRoundaboutScenario:
         route.append(final_checkpoint)
         return route
 
-    def reset(self, veh):
+    def reset(self, ego_vehicle: carla.Vehicle):
         if SPAWN_STATIC:
             self.static_actors_manager.clean_up_all()
             for marking in self.asset_spawn_markings:
@@ -154,18 +161,21 @@ class ExitingRoundaboutScenario:
         if SPAWN_DRIVING:
             self.driving_actors_manager.clean_up_all()
             self.driving_actors_manager.spawn_random_assets_at_markings(
-                markings=self.driving_actors_markings, coverage=random.uniform(0.1, 0.4)
+                markings=self.driving_actors_markings, coverage=0.1
             )
-            SetAutopilot = carla.command.SetAutopilot
-            batch = [
-                SetAutopilot(actor_id, True)
-                for actor_id in self.driving_actors_manager.spawned
-            ]
-            self._client.apply_batch_sync(batch)
+            # SetAutopilot = carla.command.SetAutopilot
+            # batch = [
+            #     SetAutopilot(actor_id, True)
+            #     for actor_id in self.driving_actors_manager.spawned
+            # ]
+            # responses = self._client.apply_batch_sync(batch, True)
+            # errors = [r.actor_id for r in responses if r.has_error()]
+            # print(errors)
             # self.driving_actors_manager.apply_physics_settings_to_spawned(enable=False)
 
         start_node = random.choice(TOWN03_ROUNDABOUT_NODES)
-        veh.set_transform(start_node.spawn_point)
+        start_node.spawn_point.location.z = 0.1
+        ego_vehicle.set_transform(start_node.spawn_point)
 
         self.take_nth_exit = random.randrange(1, 5)
         self.route = self._build_checkpoint_route(
@@ -175,8 +185,8 @@ class ExitingRoundaboutScenario:
         self.command = ChauffeurCommand.LANE_FOLLOW
         self.steps_to_reach_next_checkpoint = MAX_NUM_STEPS_TO_REACH_CHECKPOINT
 
-    def step(self, veh):
-        trans = veh.get_transform()
+    def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
+        trans = ego_vehicle.get_transform()
         loc = trans.location
         next_checkpoint = self.route[self.next_route_checkpoint_idx]
 
@@ -184,7 +194,7 @@ class ExitingRoundaboutScenario:
         # for route_checkpoint in self.route:
         #     color = carla.Color(random.randrange(255), random.randrange(255), random.randrange(255))
         #     route_checkpoint.draw(self._world, color=color, life_time=0.1)
-        # next_checkpoint.draw(self._world, life_time=0.01)
+        next_checkpoint.draw(self._world, life_time=0.01)
         # DEBUG
 
         checkpoint_area = next_checkpoint.area
@@ -207,51 +217,65 @@ class ExitingRoundaboutScenario:
             reward = 0
             done = True
 
-        for actor_id in self.driving_actors_manager.spawned:
-            actor = self._world.get_actors().find(actor_id)
-            if actor is None:
-                self.driving_actors_manager.spawned.remove(actor_id)
-                continue
-            actor_trans = actor.get_transform()
-            if actor_trans.location not in self._map_area:
-                # self.teleport_to_lru_location(actor)
+        # print(len(self.driving_actors_manager.spawned), len(self._world.get_actors()))
+        # for actor_id in self.driving_actors_manager.spawned:
+        #     actor = self._world.get_actors().find(actor_id)
+        #     if actor is None:
+        #         print("nie ma", actor_id)
+        #         self.driving_actors_manager.spawned.remove(actor_id)
+        #         continue
+        #     actor_trans = actor.get_transform()
+        #     if actor_trans.location not in self._map_area:
+        #         new_actor = self._respawn_randomly(actor)
+        #         if new_actor:
+        #             new_actor.set_autopilot(True)
 
-                # zabijanie i tworzenie na nowo
-
-                blueprint = random.choice(self._car_blueprints)
-                actor.destroy()
-                self.driving_actors_manager.spawned.remove(actor_id)
-                spawn_point_idx = np.argmin(self.respawn_usage_counter)
-                spawn_point = self.driving_actors_respawn_markings[
-                    spawn_point_idx
-                ].transform
-                actor = self.driving_actors_manager.spawn(spawn_point, blueprint)
-                if actor is not None:
-                    self.respawn_usage_counter[spawn_point_idx] += 1
-                    actor.set_autopilot(True)
-                    self.driving_actors_manager.spawned.append(actor.id)
-            else:
-                if TELEPORTATION_DRIVING:
-                    nearest_waypoint = self._map.get_waypoint(actor_trans.location)
-                    next_transform = random.choice(nearest_waypoint.next(0.1)).transform
-                    actor.set_transform(next_transform)
-                elif AUTOPILOT_DRIVING:
-                    if get_speed(actor) < 3:
-                        if self.actor_stuck_counter.get(actor_id):
-                            self.actor_stuck_counter[actor_id] += 1
-                        else:
-                            self.actor_stuck_counter[actor_id] = 1
-                    else:
-                        self.actor_stuck_counter[actor_id] = 0
-
-                    # if self.actor_stuck_counter[actor_id] > 100:
-                    #     self.teleport_to_lru_location(actor)
-
-        print(
-            f"Steps to reach checkpoint: {self.steps_to_reach_next_checkpoint} | Command: {self.command.name}| Next checkpoint: {next_checkpoint.name} | Take nth exit: {self.take_nth_exit}"
-        )
+                # blueprint = random.choice(self._car_blueprints)
+                # actor.destroy()
+                # self.driving_actors_manager.spawned.remove(actor_id)
+                # spawn_point_idx = np.argmin(self.respawn_usage_counter)
+                # spawn_point = self.driving_actors_respawn_markings[
+                #     spawn_point_idx
+                # ].transform
+                # actor = self.driving_actors_manager.spawn(spawn_point, blueprint)
+                # if actor is not None:
+                #     self.respawn_usage_counter[spawn_point_idx] += 1
+                #     actor.set_autopilot(True)
+                #     self.driving_actors_manager.spawned.append(actor.id)
+            # else:
+            #     if TELEPORTATION_DRIVING:
+            #         nearest_waypoint = self._map.get_waypoint(actor_trans.location)
+            #         next_transform = random.choice(nearest_waypoint.next(0.1)).transform
+            #         actor.set_transform(next_transform)
+            #     elif AUTOPILOT_DRIVING:
+            #         if get_speed(actor) < 3:
+            #             if self.actor_stuck_counter.get(actor_id):
+            #                 self.actor_stuck_counter[actor_id] += 1
+            #             else:
+            #                 self.actor_stuck_counter[actor_id] = 1
+            #         else:
+            #             self.actor_stuck_counter[actor_id] = 0
+            #
+            #         if self.actor_stuck_counter[actor_id] > 50:
+            #             new_actor = self._respawn_randomly(actor)
+            #             if new_actor:
+            #                 new_actor.set_autopilot(True)
+        # print(
+        #     f"Steps to reach checkpoint: {self.steps_to_reach_next_checkpoint} | Command: {self.command.name}| Next checkpoint: {next_checkpoint.name} | Take nth exit: {self.take_nth_exit}"
+        # )
         return ScenarioStepResult(self.command, reward, done, info)
 
     def close(self):
         self.static_actors_manager.clean_up_all()
         self.driving_actors_manager.clean_up_all()
+from carla_real_traffic_scenarios.scenario import Scenario as CRTSScenario
+class RoundaboutExitingScenarioAdapter(CarlaScenarioAdapter):
+
+    def __init__(self):
+        super().__init__(
+            CarlaMaps.from_crts(CarlaMaps.TOWN03),
+            'ROUNDABOUT_EXITING_TOWN03'
+        )
+
+    def _make_crts_scenario(self, carla_server_controller: CarlaServerController) -> CRTSScenario:
+        return RoundaboutExitingScenario(carla_server_controller._client)

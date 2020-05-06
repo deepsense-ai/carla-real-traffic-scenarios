@@ -16,7 +16,7 @@ class CircleArea(NamedTuple):
 
     def __contains__(self, loc: carla.Location) -> bool:
         dist = distance(loc, self.location)
-        print("Distance to next area:", dist)
+        # print("Distance to next area:", dist)
         return dist <= self.radius
 
 

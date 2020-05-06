@@ -4,7 +4,6 @@ from typing import List
 import numpy as np
 import random
 from more_itertools import windowed, unique_justseen
-from operator import eq
 
 import carla
 from carla_real_traffic_scenarios.artificial_lane_change.controller import TeleportCommandsController
@@ -18,7 +17,10 @@ TARGET_LANE_ALIGNMENT_FRAMES = 10
 CROSSTRACK_ERROR_TOLERANCE = 0.3
 YAW_DEG_ERRORS_TOLERANCE = 10
 VEHICLE_SLOT_LENGTH_M = 8
-ADVERSARY_VEHICLES_NUMBER = 8
+MAX_VEHICLE_RANDOM_SPACE_M = 20
+MAX_MANEUVER_LENGTH_M = 200
+BIRD_VIEW_HEIGHT_M = 100
+
 MIN_SPEED_MPS = 3.0  # ~11 km/h
 JAM_SPEED_MPS = 5.56  # ~20 km/h
 CITY_SPEED_MPS = 16.67  # ~60 km/h
@@ -32,36 +34,65 @@ SPEED_RANGE_NAMES = {
     'WIDE': (MIN_SPEED_MPS, CITY_SPEED_MPS),
 }
 
-# it is maximum distance to make a lane change maneuver
-# note: (~42m is visible before ego vehicle on bird view; same for distance behind vehicle)
-FINAL_POINT_DISTANCE_M = 100
+
+# env vehicles spacing on route
+def _calc_offset(current_idx, controllers_left, resolution_m):
+    m2idx = 1 / resolution_m
+    slot_length = int(np.ceil(VEHICLE_SLOT_LENGTH_M * m2idx))
+
+    max_random_space = int(MAX_VEHICLE_RANDOM_SPACE_M * m2idx)
+    random_space = np.random.randint(0, max_random_space)
+
+    return slot_length + random_space
+
+
+def _is_behind_ego_or_inside_birdview(c, ego_vehicle_location):
+    env_vehicle_direction = Vector3.from_carla_location(c.forward_vector).as_numpy()
+    relative_vector = (Vector3.from_carla_location(c.location) -
+                       Vector3.from_carla_location(ego_vehicle_location)).as_numpy()
+    deviation = np.arccos(np.clip(np.dot(env_vehicle_direction, relative_vector) /
+                                  (np.linalg.norm(env_vehicle_direction) * np.linalg.norm(relative_vector)), -1.0, 1.0))
+    is_inside = True
+    is_behind_ego = np.abs(deviation) > np.pi / 1.5
+    if not is_behind_ego:
+        x, y = ego_vehicle_location.x, ego_vehicle_location.y
+        half_range = BIRD_VIEW_HEIGHT_M / 2 * 1.4
+        xmin, xmax = x - half_range, x + half_range
+        ymin, ymax = y - half_range, y + half_range
+        is_inside = xmin <= c.location.x <= xmax and ymin <= c.location.y <= ymax
+    return is_inside
 
 
 class ArtificialLaneChangeScenario(Scenario):
 
     def __init__(self, *, client: carla.Client, cmd_for_changing_lane=ChauffeurCommand.CHANGE_LANE_LEFT,
-                 env_vehicles_route_length_m=300, speed_range_token: str, no_columns=True):
+                 speed_range_token: str, no_columns=True):
         super().__init__(client=client)
         start_point = Transform(Vector3(-144.4, -22.41, 0), Vector2(-1.0, 0.0))
         self._find_lane_waypoints(cmd_for_changing_lane, start_point.position.as_carla_location())
         self._cmd_for_changing_lane = cmd_for_changing_lane
         self._done_counter: int = TARGET_LANE_ALIGNMENT_FRAMES
 
-        vehicles_number = 0 if no_columns else ADVERSARY_VEHICLES_NUMBER
-        env_vehicles = self._spawn_env_vehicles(vehicles_number)
+        # vehicles shall fill bird view + first vehicle shall reach end of route forward part
+        # till the last one reaches bottom of the bird view; assume just VEHICLE_SLOT_LENGTH_M spacing
+        max_env_vehicles_number = int(BIRD_VIEW_HEIGHT_M * 1.2 // VEHICLE_SLOT_LENGTH_M)
+        env_vehicles = [] if no_columns else self._spawn_env_vehicles(max_env_vehicles_number)
         self._controllers = self._wrap_with_controllers(env_vehicles)
 
         env_vehicles_speed_range_mps = SPEED_RANGE_NAMES[speed_range_token]
         self._speed_range_mps = env_vehicles_speed_range_mps
         self._env_vehicle_column_ahead_range_m = (5, 30)
 
+        route_length_m = max(MAX_MANEUVER_LENGTH_M + BIRD_VIEW_HEIGHT_M,
+                             max_env_vehicles_number * (MAX_VEHICLE_RANDOM_SPACE_M + VEHICLE_SLOT_LENGTH_M)) * 2
         self._topology = Topology(self._world_map)
-        self._routes = self._obtain_routes(self._target_lane_waypoint, env_vehicles_route_length_m)
+        self._routes: List[List[carla.Transform]] = self._obtain_routes(self._target_lane_waypoint, route_length_m)
 
-    def _obtain_routes(self, pass_through_waypoint: carla.Waypoint, total_length: float) -> List[List[carla.Transform]]:
-        part_length = total_length / 2
-        forward_routes = self._topology.get_forward_routes(pass_through_waypoint, part_length)
-        backward_routes = self._topology.get_backward_routes(pass_through_waypoint, part_length)
+    def _obtain_routes(self, pass_through_waypoint: carla.Waypoint, total_length_m: float) \
+            -> List[List[carla.Transform]]:
+        part_length_m = total_length_m / 2
+        forward_routes = self._topology.get_forward_routes(pass_through_waypoint, part_length_m)
+        backward_routes = self._topology.get_backward_routes(pass_through_waypoint, part_length_m)
         routes = [
             backward_route + forward_route
             for backward_route in backward_routes for forward_route in forward_routes
@@ -126,10 +157,10 @@ class ArtificialLaneChangeScenario(Scenario):
             self._client.apply_batch_sync(cmds, do_tick=False)
 
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
+        ego_vehicle_transform = ego_vehicle.get_transform()
+        self._move_env_vehicles(ego_vehicle_transform.location)
 
-        self._move_env_vehicles()
-
-        ego_vehicle_transform = Transform.from_carla_transform(ego_vehicle.get_transform())
+        ego_vehicle_transform = Transform.from_carla_transform(ego_vehicle_transform)
         current_lane_waypoint = self._world_map.get_waypoint(ego_vehicle_transform.position.as_carla_location())
         current_lane = get_lane_id(current_lane_waypoint)
 
@@ -177,19 +208,6 @@ class ArtificialLaneChangeScenario(Scenario):
         ego_vehicle_idx = int(np.argmin([t.location.distance(ego_vehicle_location) for t in route]))
         column_start_idx = ego_vehicle_idx + int(column_ahead_of_ego_m * m2idx)
 
-        # env vehicles spacing on route
-        def _calc_offset(current_idx, controllers_left):
-            slot_length = int(np.ceil(VEHICLE_SLOT_LENGTH_M * m2idx))
-
-            remain_route_for_random_space = max(current_idx - controllers_left * slot_length, 0)
-            remain_route_for_single_random_space = remain_route_for_random_space // controllers_left * 1.5
-
-            random_space = 0
-            if remain_route_for_single_random_space:
-                random_space = np.random.randint(0, remain_route_for_single_random_space)
-
-            return slot_length + random_space
-
         ncontrollers = len(self._controllers)
         current_idx = column_start_idx
         cmds = []
@@ -197,17 +215,42 @@ class ArtificialLaneChangeScenario(Scenario):
             initial_location = route[current_idx].location
             cmds.extend(controller.reset(speed_mps=speed_mps, route=route, initial_location=initial_location))
             controllers_left = ncontrollers - idx
-            offset = _calc_offset(current_idx, controllers_left)
-            current_idx = max(current_idx - offset, 0)
+            offset = _calc_offset(current_idx, controllers_left, resolution_m)
+            current_idx = current_idx - offset
+            assert current_idx >= 0
 
         return cmds
 
-    def _move_env_vehicles(self):
+    def _move_env_vehicles(self, ego_vehicle_location: carla.Location):
+        column_end_location = None
+        column_end_idx = None
+        route_resolution_m = None
+
         cmds = []
-        for controller in self._controllers.values():
+        for controller_idx, controller in enumerate(self._controllers.values()):
             finished, cmds_ = controller.step()
-            cmds.extend(cmds)
-            if finished:
-                cmds.extend(controller.reset())  # reset its position to beginning of the route
+            if not finished and _is_behind_ego_or_inside_birdview(controller, ego_vehicle_location):
+                cmds.extend(cmds_)
+            else:
+                if column_end_location is None:
+                    # obtain location of last vehicle in column
+                    idxes = [c.idx for c in self._controllers.values()]
+                    locations = [c.location for c in self._controllers.values()]
+                    column_end_location = locations[int(np.argmin(idxes))]
+
+                    # resolution of not resampled route
+                    route_resolution_m = \
+                        np.median([t1.location.distance(t2.location) for t1, t2 in windowed(self._route, 2)])
+
+                    # idx of nearest point on not resamples route
+                    column_end_idx = np.argmin([t.location.distance(column_end_location) for t in self._route])
+
+                # obtain reset location
+                offset = _calc_offset(column_end_idx, 1, route_resolution_m)
+                column_end_idx = column_end_idx - offset
+                assert column_end_idx >= 0
+                column_end_location = self._route[column_end_idx].location
+
+                cmds.extend(controller.reset(initial_location=column_end_location))
         if cmds:
             self._client.apply_batch_sync(cmds, do_tick=False)

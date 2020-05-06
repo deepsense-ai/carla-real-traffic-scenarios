@@ -17,7 +17,7 @@ class TeleportCommandsController:
         self._actor_id = vehicle.id
         self._step_length_s = step_length_s
 
-        self._idx = 0
+        self._next_idx = 0
         self._speed_mps = 6
         self._resampled_route: List[Transform] = []
 
@@ -38,15 +38,15 @@ class TeleportCommandsController:
             initial_idx = np.argmin(distances)
         transform = self._resampled_route[initial_idx]
         cmds = self._get_commands(transform)
-        self._idx = initial_idx + 1
+        self._next_idx = initial_idx + 1
         return cmds
 
     def step(self):
-        transform = self._resampled_route[self._idx]
+        transform = self._resampled_route[self._next_idx]
         cmds = self._get_commands(transform)
-        self._idx += 1
-        not_finished = self._idx < len(self._resampled_route)
-        return not not_finished, cmds
+        self._next_idx += 1
+        done = self._next_idx >= len(self._resampled_route)
+        return done, cmds
 
     def _get_commands(self, transform: Transform):
         velocity = (transform.orientation * self._speed_mps).to_vector3(0).as_carla_vector3d()
@@ -71,3 +71,15 @@ class TeleportCommandsController:
     @property
     def actor_id(self):
         return self._actor_id
+
+    @property
+    def idx(self):
+        return self._next_idx - 1
+
+    @property
+    def location(self):
+        return self._resampled_route[self._next_idx - 1].position.as_carla_location()
+
+    @property
+    def forward_vector(self):
+        return self._resampled_route[self._next_idx - 1].as_carla_transform().rotation.get_forward_vector()

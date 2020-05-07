@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from typing import Tuple
 
+import carla
 import numpy as np
+
 
 def jaccard_rectangles(r1_width, r1_height, r2_width, r2_height) -> float:
     r1_area = r1_width * r1_height
@@ -11,9 +14,7 @@ def jaccard_rectangles(r1_width, r1_height, r2_width, r2_height) -> float:
 
 def normalize_angle(angle: float) -> float:
     """Normalize an angle to [-pi, pi]."""
-    return normalize_angle_npy(
-        np.array(angle, dtype=np.float32)
-    ).item()
+    return normalize_angle_npy(np.array(angle, dtype=np.float32)).item()
 
 
 def normalize_angle_npy(angles: np.ndarray) -> np.ndarray:
@@ -23,3 +24,17 @@ def normalize_angle_npy(angles: np.ndarray) -> np.ndarray:
     angles[angles > np.pi] -= TWO_PI
     angles[angles < -np.pi] += TWO_PI
     return angles
+
+
+def distance(a: carla.Location, b: carla.Location) -> float:
+    dx = a.x - b.x
+    dy = a.y - b.y
+    return np.sqrt(dx * dx + dy * dy)
+
+
+def points_on_ring(radius: float, num_points: int) -> Tuple[np.array, np.array]:
+    """Generates `n` coordinates lying on a ring with radius `r` and center at (0, 0)."""
+    t = np.linspace(0, 2 * np.pi, num_points)
+    xs = radius * np.cos(t)
+    ys = radius * np.sin(t)
+    return xs, ys

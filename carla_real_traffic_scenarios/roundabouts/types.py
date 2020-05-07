@@ -1,22 +1,19 @@
-import math
+import carla
+from dataclasses import dataclass
 from typing import NamedTuple
 
-from dataclasses import dataclass
+from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.scenario import ChauffeurCommand
+from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.utils import (
+    geometry,
+)
 
-import carla
-
-def distance(a: carla.Location, b: carla.Location):
-    dx = a.x - b.x
-    dy = a.y - b.y
-    return math.sqrt(dx * dx + dy * dy)
 
 class CircleArea(NamedTuple):
     location: carla.Location
     radius: float
 
     def __contains__(self, loc: carla.Location) -> bool:
-        dist = distance(loc, self.location)
-        # print("Distance to next area:", dist)
+        dist = geometry.distance(loc, self.location)
         return dist <= self.radius
 
 
@@ -28,3 +25,18 @@ class RoundaboutNode:
     next_exit: CircleArea
     final_area_for_next_exit: CircleArea
     next_node: "RoundaboutNode"
+
+class RouteCheckpoint(NamedTuple):
+    name: str
+    area: CircleArea
+    command: ChauffeurCommand
+
+    # FIXME Could be a method of CircleArea instead...
+    def draw(self, world: carla.World, **kwargs):
+        world.debug.draw_point(self.area.location, **kwargs)
+        xs, ys = geometry.points_on_ring(radius=self.area.radius, num_points=10)
+        for x, y in zip(xs, ys):
+            center = carla.Location(
+                x=self.area.location.x + x, y=self.area.location.y + y, z=0.1
+            )
+            world.debug.draw_point(center, **kwargs)

@@ -1,15 +1,22 @@
 import carla
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import RoundaboutExitingScenario
+from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import (
+    RoundaboutExitingScenario,
+)
 from sim2real.carla import DT
+
 synch = True
+
+
 def set_birds_eye_view_spectator(
-        spectator: carla.Actor, followed_location: carla.Location, above: float
+    spectator: carla.Actor, followed_location: carla.Location, above: float
 ):
     birds_eye_view = carla.Transform(
         carla.Location(x=followed_location.x, y=followed_location.y, z=above),
         carla.Rotation(pitch=-90),
     )
     spectator.set_transform(birds_eye_view)
+
+
 client = carla.Client("localhost", 2000)
 client.set_timeout(3.0)
 

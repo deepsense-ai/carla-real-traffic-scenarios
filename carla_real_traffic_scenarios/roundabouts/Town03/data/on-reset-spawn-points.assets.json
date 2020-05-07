@@ -1,0 +1,1668 @@
+[
+    {
+        "id": 0,
+        "location": {
+            "x": 3.938037872314453,
+            "y": 27.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 294.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 1,
+        "location": {
+            "x": 7.688037872314453,
+            "y": 27.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 294.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 2,
+        "location": {
+            "x": 5.188037872314453,
+            "y": 35.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 290.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 3,
+        "location": {
+            "x": 1.9380378723144531,
+            "y": 34.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 290.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 4,
+        "location": {
+            "x": 1.9380378723144531,
+            "y": 44.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 5,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 53.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 6,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 63.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 7,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 72.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 8,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 83.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 9,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 93.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 10,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 103.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 11,
+        "location": {
+            "x": 1.1880378723144531,
+            "y": 117.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 12,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 109.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 13,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 101.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 14,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 87.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 15,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 75.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 16,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 61.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 17,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 48.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 18,
+        "location": {
+            "x": 5.438037872314453,
+            "y": 42.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 270.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 19,
+        "location": {
+            "x": 23.938037872314453,
+            "y": 8.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 334.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 20,
+        "location": {
+            "x": 33.68803787231445,
+            "y": 6.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 350.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 21,
+        "location": {
+            "x": 44.93803787231445,
+            "y": 6.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 350.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 22,
+        "location": {
+            "x": 50.93803787231445,
+            "y": 6.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 358.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 23,
+        "location": {
+            "x": 56.68803787231445,
+            "y": 7.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 358.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 24,
+        "location": {
+            "x": 51.18803787231445,
+            "y": 3.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 358.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 25,
+        "location": {
+            "x": 41.43803787231445,
+            "y": 3.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 358.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 26,
+        "location": {
+            "x": 29.688037872314453,
+            "y": 3.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 358.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 27,
+        "location": {
+            "x": 24.688037872314453,
+            "y": 4.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 342.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 28,
+        "location": {
+            "x": 27.438037872314453,
+            "y": -4.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 546.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 29,
+        "location": {
+            "x": 34.93803787231445,
+            "y": -4.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 538.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 30,
+        "location": {
+            "x": 43.93803787231445,
+            "y": -4.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 538.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 31,
+        "location": {
+            "x": 47.43803787231445,
+            "y": -4.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 538.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 32,
+        "location": {
+            "x": 60.68803787231445,
+            "y": -4.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 538.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 33,
+        "location": {
+            "x": 64.93803405761719,
+            "y": -7.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 538.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 34,
+        "location": {
+            "x": 55.93803405761719,
+            "y": -7.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 538.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 35,
+        "location": {
+            "x": 23.188034057617188,
+            "y": -2.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 36,
+        "location": {
+            "x": 22.688034057617188,
+            "y": 3.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 646.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 37,
+        "location": {
+            "x": 20.438034057617188,
+            "y": 10.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 662.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 38,
+        "location": {
+            "x": 18.188034057617188,
+            "y": 14.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 662.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 39,
+        "location": {
+            "x": 14.438034057617188,
+            "y": 18.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 682.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 40,
+        "location": {
+            "x": 8.688034057617188,
+            "y": 21.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 702.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 41,
+        "location": {
+            "x": 2.6880340576171875,
+            "y": 23.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 718.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 42,
+        "location": {
+            "x": -3.3119659423828125,
+            "y": 23.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 738.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 43,
+        "location": {
+            "x": -7.5619659423828125,
+            "y": 22.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 738.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 44,
+        "location": {
+            "x": -13.811965942382812,
+            "y": 21.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 778.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 45,
+        "location": {
+            "x": -7.8119659423828125,
+            "y": 26.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 802.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 46,
+        "location": {
+            "x": -6.8119659423828125,
+            "y": 35.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 802.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 47,
+        "location": {
+            "x": -6.8119659423828125,
+            "y": 45.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 802.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 48,
+        "location": {
+            "x": -6.8119659423828125,
+            "y": 56.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 802.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 49,
+        "location": {
+            "x": -6.3119659423828125,
+            "y": 71.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 50,
+        "location": {
+            "x": -6.3119659423828125,
+            "y": 80.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 51,
+        "location": {
+            "x": -6.3119659423828125,
+            "y": 89.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 52,
+        "location": {
+            "x": -6.3119659423828125,
+            "y": 100.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 53,
+        "location": {
+            "x": -10.061965942382812,
+            "y": 96.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 54,
+        "location": {
+            "x": -10.061965942382812,
+            "y": 77.2249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 55,
+        "location": {
+            "x": -10.061965942382812,
+            "y": 64.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 56,
+        "location": {
+            "x": -10.061965942382812,
+            "y": 47.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 57,
+        "location": {
+            "x": -10.061965942382812,
+            "y": 34.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 814.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 58,
+        "location": {
+            "x": -11.311965942382812,
+            "y": 27.9749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 802.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 59,
+        "location": {
+            "x": -16.811965942382812,
+            "y": 16.7249755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 762.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 60,
+        "location": {
+            "x": -20.811965942382812,
+            "y": 11.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 782.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 61,
+        "location": {
+            "x": -24.061965942382812,
+            "y": 6.4749755859375,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 782.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 62,
+        "location": {
+            "x": -23.811965942382812,
+            "y": -2.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 454.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 63,
+        "location": {
+            "x": -21.311965942382812,
+            "y": -9.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 482.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 64,
+        "location": {
+            "x": -23.561965942382812,
+            "y": -9.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 498.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 65,
+        "location": {
+            "x": -27.061965942382812,
+            "y": -7.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 514.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 66,
+        "location": {
+            "x": -34.31196594238281,
+            "y": -4.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 534.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 67,
+        "location": {
+            "x": -42.06196594238281,
+            "y": -2.5250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 542.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 68,
+        "location": {
+            "x": -52.56196594238281,
+            "y": -2.5250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 542.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 69,
+        "location": {
+            "x": -65.31196594238281,
+            "y": -2.5250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 542.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 70,
+        "location": {
+            "x": -46.81196594238281,
+            "y": -2.5250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 542.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 71,
+        "location": {
+            "x": -17.311965942382812,
+            "y": -16.5250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 494.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 72,
+        "location": {
+            "x": -9.561965942382812,
+            "y": -22.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 494.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 73,
+        "location": {
+            "x": -2.0619659423828125,
+            "y": -23.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 534.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 74,
+        "location": {
+            "x": 5.6880340576171875,
+            "y": -23.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 554.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 75,
+        "location": {
+            "x": 13.438034057617188,
+            "y": -18.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 574.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 76,
+        "location": {
+            "x": 17.688034057617188,
+            "y": -14.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 598.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 77,
+        "location": {
+            "x": 22.188034057617188,
+            "y": -7.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 578.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 78,
+        "location": {
+            "x": 9.938034057617188,
+            "y": -27.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 610.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 79,
+        "location": {
+            "x": 6.1880340576171875,
+            "y": -24.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 610.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 80,
+        "location": {
+            "x": 4.1880340576171875,
+            "y": -34.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 81,
+        "location": {
+            "x": 4.1880340576171875,
+            "y": -48.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 82,
+        "location": {
+            "x": 4.1880340576171875,
+            "y": -62.5250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 83,
+        "location": {
+            "x": 4.9380340576171875,
+            "y": -80.7750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 84,
+        "location": {
+            "x": 4.9380340576171875,
+            "y": -101.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 85,
+        "location": {
+            "x": 9.438034057617188,
+            "y": -101.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 86,
+        "location": {
+            "x": 9.438034057617188,
+            "y": -92.0250244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 87,
+        "location": {
+            "x": 9.438034057617188,
+            "y": -76.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 88,
+        "location": {
+            "x": 8.188034057617188,
+            "y": -64.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 89,
+        "location": {
+            "x": 8.188034057617188,
+            "y": -49.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 90,
+        "location": {
+            "x": 8.188034057617188,
+            "y": -36.2750244140625,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 630.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 91,
+        "location": {
+            "x": -64.71947479248047,
+            "y": 0.7427492141723633,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 714.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 92,
+        "location": {
+            "x": -1.1292800903320312,
+            "y": -102.86817932128906,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 810.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 93,
+        "location": {
+            "x": -2.1292800903320312,
+            "y": -88.11817932128906,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 810.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 94,
+        "location": {
+            "x": -2.1292800903320312,
+            "y": -71.86817932128906,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 810.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 95,
+        "location": {
+            "x": -2.1292800903320312,
+            "y": -56.11817932128906,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 810.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 96,
+        "location": {
+            "x": -3.8792800903320312,
+            "y": -34.11817932128906,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 818.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    },
+    {
+        "id": 97,
+        "location": {
+            "x": -2.8792800903320312,
+            "y": -46.86817932128906,
+            "z": 0.5
+        },
+        "rotation": {
+            "pitch": 0.0,
+            "yaw": 806.0,
+            "roll": 0.0
+        },
+        "yaw_agnostic": false,
+        "blueprint_patterns": [
+            "vehicle.*"
+        ]
+    }
+]

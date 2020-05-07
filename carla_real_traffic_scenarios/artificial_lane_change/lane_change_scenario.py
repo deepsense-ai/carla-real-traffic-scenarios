@@ -84,7 +84,7 @@ class ArtificialLaneChangeScenario(Scenario):
         self._env_vehicle_column_ahead_range_m = (5, 30)
 
         route_length_m = max(MAX_MANEUVER_LENGTH_M + BIRD_VIEW_HEIGHT_M,
-                             max_env_vehicles_number * (MAX_VEHICLE_RANDOM_SPACE_M + VEHICLE_SLOT_LENGTH_M)) * 2
+                             max_env_vehicles_number * (MAX_VEHICLE_RANDOM_SPACE_M + VEHICLE_SLOT_LENGTH_M)) * 3
         self._topology = Topology(self._world_map)
         self._routes: List[List[carla.Transform]] = self._obtain_routes(self._target_lane_waypoint, route_length_m)
 

@@ -115,12 +115,21 @@ class ArtificialLaneChangeScenario(Scenario):
         blueprints = self._world.get_blueprint_library().filter('vehicle.*')
         blueprints = [b for b in blueprints if int(b.get_attribute('number_of_wheels')) == 4]
         spawn_points = self._world_map.get_spawn_points()
+        max_ticks = 4
 
         def _get_env_vehicles():
             return [
                 v for v in self._world.get_actors().filter('vehicle.*')
                 if v.attributes.get('role_name') != 'hero' and v.is_alive
             ]
+
+        def _wait_for_env_vehicles(total_number, max_ticks):
+            env_vehicles = _get_env_vehicles()
+            while len(env_vehicles) < total_number and max_ticks > 0:
+                self._world.tick()
+                max_ticks -= 1
+                env_vehicles = _get_env_vehicles()
+            return env_vehicles
 
         env_vehicles = _get_env_vehicles()
         missing_vehicles = n - len(env_vehicles)
@@ -131,7 +140,7 @@ class ArtificialLaneChangeScenario(Scenario):
                                                   random.sample(spawn_points, k=missing_vehicles))
             ]
             self._client.apply_batch_sync(cmds, do_tick=True)
-            env_vehicles = _get_env_vehicles()
+            env_vehicles = _wait_for_env_vehicles(n, max_ticks)
             missing_vehicles = n - len(env_vehicles)
         return env_vehicles
 

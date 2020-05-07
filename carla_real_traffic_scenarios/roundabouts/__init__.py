@@ -8,7 +8,9 @@ from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts 
 from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.Town03.nodes import (
     TOWN03_ROUNDABOUT_NODES,
 )
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import route
+from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import (
+    route,
+)
 from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.types import (
     CircleArea,
     RoundaboutNode,
@@ -22,8 +24,8 @@ from sim2real.carla.maps import CarlaMaps
 from sim2real.carla.maps.assets import markings
 from sim2real.carla.maps.assets.actor_manager import ActorManager
 
-# from sim2real.carla.scenarios.carlascenario_adapter import CarlaScenarioAdapter
-# from sim2real.carla.server import CarlaServerController
+from sim2real.carla.scenarios.carlascenario_adapter import CarlaScenarioAdapter
+from sim2real.carla.server import CarlaServerController
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 
@@ -32,9 +34,11 @@ class RoundaboutExitingScenario(Scenario):
     """
     TODO
     """
-    def __init__(self, client):
+
+    def __init__(self, client: carla.Client, sparse_reward_mode: bool = False):
         super().__init__(client)
         self._client = client
+        self._sparse_reward_mode = sparse_reward_mode
         self._world = client.get_world()
         self._map = self._world.get_map()
         self._scenario_area = CircleArea(location=carla.Location(0, 0, 0), radius=100)
@@ -97,11 +101,15 @@ class RoundaboutExitingScenario(Scenario):
         info = {}
 
         if ego_location in checkpoint_area:
+            if not self._sparse_reward_mode:
+                num_checkpoints_excluding_final = len(self._route) - 1
+                reward = 1 / num_checkpoints_excluding_final
             self._command = next_checkpoint.command
             self._steps_to_reach_next_checkpoint = MAX_NUM_STEPS_TO_REACH_CHECKPOINT
             self._next_route_checkpoint_idx += 1
 
         if self._next_route_checkpoint_idx == len(self._route):
+            # NOTE in default (dense) reward mode, agent will get 2 points for completing whole route
             reward = 1
             done = True
 
@@ -118,17 +126,18 @@ class RoundaboutExitingScenario(Scenario):
         self._driving_actors_manager.clean_up_all()
 
 
-# from carla_real_traffic_scenarios.scenario import Scenario as CRTSScenario
-# class RoundaboutExitingScenarioAdapter(CarlaScenarioAdapter):
-#
-#     def __init__(self):
-#         super().__init__(
-#             CarlaMaps.from_crts(CarlaMaps.TOWN03),
-#             'ROUNDABOUT_EXITING_TOWN03'
-#         )
-#
-#     def _make_crts_scenario(self, carla_server_controller: CarlaServerController) -> CRTSScenario:
-#         return RoundaboutExitingScenario(carla_server_controller._client)
+from carla_real_traffic_scenarios.scenario import Scenario as CRTSScenario
+class RoundaboutExitingScenarioAdapter(CarlaScenarioAdapter):
+
+    def __init__(self, sparse_reward_mode: bool = False):
+        self._sparse_reward_mode = sparse_reward_mode
+        super().__init__(
+            CarlaMaps.from_crts(CarlaMaps.TOWN03),
+            'ROUNDABOUT_EXITING_TOWN03'
+        )
+
+    def _make_crts_scenario(self, carla_server_controller: CarlaServerController) -> CRTSScenario:
+        return RoundaboutExitingScenario(carla_server_controller._client, sparse_reward_mode=self._sparse_reward_mode)
 
 # TODO reset()
 # if SPAWN_STATIC:

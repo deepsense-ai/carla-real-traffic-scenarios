@@ -2,30 +2,17 @@ import carla
 import random
 from pathlib import Path
 from typing import Optional
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import (
-    Town03,
-)
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.Town03.nodes import (
+
+from carla_real_traffic_scenarios import FPS
+from carla_real_traffic_scenarios.assets import markings
+from carla_real_traffic_scenarios.assets.actor_manager import ActorManager
+from carla_real_traffic_scenarios.roundabouts import Town03
+from carla_real_traffic_scenarios.roundabouts.Town03.nodes import (
     TOWN03_ROUNDABOUT_NODES,
 )
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import (
-    route,
-)
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.types import (
-    CircleArea,
-    RoundaboutNode,
-)
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.scenario import (
-    ScenarioStepResult,
-    Scenario,
-)
-from sim2real.carla import ChauffeurCommand, FPS
-from sim2real.carla.maps import CarlaMaps
-from sim2real.carla.maps.assets import markings
-from sim2real.carla.maps.assets.actor_manager import ActorManager
-
-from sim2real.carla.scenarios.carlascenario_adapter import CarlaScenarioAdapter
-from sim2real.carla.server import CarlaServerController
+from carla_real_traffic_scenarios.roundabouts import route
+from carla_real_traffic_scenarios.roundabouts.types import CircleArea, RoundaboutNode
+from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 
@@ -125,19 +112,6 @@ class RoundaboutExitingScenario(Scenario):
     def close(self):
         self._driving_actors_manager.clean_up_all()
 
-
-from carla_real_traffic_scenarios.scenario import Scenario as CRTSScenario
-class RoundaboutExitingScenarioAdapter(CarlaScenarioAdapter):
-
-    def __init__(self, sparse_reward_mode: bool = False):
-        self._sparse_reward_mode = sparse_reward_mode
-        super().__init__(
-            CarlaMaps.from_crts(CarlaMaps.TOWN03),
-            'ROUNDABOUT_EXITING_TOWN03'
-        )
-
-    def _make_crts_scenario(self, carla_server_controller: CarlaServerController) -> CRTSScenario:
-        return RoundaboutExitingScenario(carla_server_controller._client, sparse_reward_mode=self._sparse_reward_mode)
 
 # TODO reset()
 # if SPAWN_STATIC:

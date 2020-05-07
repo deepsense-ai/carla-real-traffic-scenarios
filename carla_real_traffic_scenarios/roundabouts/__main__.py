@@ -2,7 +2,7 @@ import carla
 from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import (
     RoundaboutExitingScenario,
 )
-from sim2real.carla import DT
+from carla_real_traffic_scenarios import DT
 
 synch = True
 

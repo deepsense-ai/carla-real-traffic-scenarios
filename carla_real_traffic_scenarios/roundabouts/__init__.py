@@ -110,7 +110,8 @@ class RoundaboutExitingScenario(Scenario):
             self._next_route_checkpoint_idx += 1
 
         if self._map.get_waypoint(ego_location, project_to_road=False) is None:
-            reward = -0.05
+            reward = 0
+            done = True
 
         if self._next_route_checkpoint_idx == len(self._route):
             # NOTE in default (dense) reward mode, agent will get 2 points for completing whole route

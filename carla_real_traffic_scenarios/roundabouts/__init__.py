@@ -23,7 +23,8 @@ MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 
 class RoundaboutExitingScenario(Scenario):
     """
-
+    Randomly chooses which exit to take and gives "turn right" after passing by the last roundabout checkpoint.
+    Only Town03 roundabout is currently supported, but it's trivial to use with custom maps (just provide new marking files)
     """
 
     def __init__(self, client: carla.Client, sparse_reward_mode: bool = False):
@@ -109,7 +110,9 @@ class RoundaboutExitingScenario(Scenario):
             self._steps_to_reach_next_checkpoint = MAX_NUM_STEPS_TO_REACH_CHECKPOINT
             self._next_route_checkpoint_idx += 1
 
-        is_ego_offroad = self._map.get_waypoint(ego_location, project_to_road=False) is None
+        is_ego_offroad = (
+            self._map.get_waypoint(ego_location, project_to_road=False) is None
+        )
         if is_ego_offroad:
             # alternatively may want to give negative rewards and not end the episode
             reward = 0

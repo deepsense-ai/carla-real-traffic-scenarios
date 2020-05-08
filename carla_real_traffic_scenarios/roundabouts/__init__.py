@@ -12,14 +12,18 @@ from carla_real_traffic_scenarios.roundabouts.Town03.nodes import (
 )
 from carla_real_traffic_scenarios.roundabouts import route
 from carla_real_traffic_scenarios.roundabouts.types import CircleArea, RoundaboutNode
-from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
+from carla_real_traffic_scenarios.scenario import (
+    ScenarioStepResult,
+    Scenario,
+    ChauffeurCommand,
+)
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 
 
 class RoundaboutExitingScenario(Scenario):
     """
-    TODO
+
     """
 
     def __init__(self, client: carla.Client, sparse_reward_mode: bool = False):
@@ -28,10 +32,13 @@ class RoundaboutExitingScenario(Scenario):
         self._sparse_reward_mode = sparse_reward_mode
         self._world = client.get_world()
         self._map = self._world.get_map()
-        self._scenario_area = CircleArea(location=carla.Location(0, 0, 0), radius=100)
+
+        # Saving state between consecutive steps
+        self._next_route_checkpoint_idx: Optional[int] = None
         self._steps_to_reach_next_checkpoint: Optional[int] = None
         self._command: ChauffeurCommand = None
 
+        # Driving actors
         vehicle_blueprints = self._world.get_blueprint_library().filter("vehicle.*")
         self._car_blueprints = [
             bp
@@ -39,11 +46,13 @@ class RoundaboutExitingScenario(Scenario):
             if int(bp.get_attribute("number_of_wheels")) == 4
         ]
 
+        # Map
         data_dir = Path(Town03.__file__).parent / "data"
         self._driving_actors_markings = markings.deserialize_json_file(
             path=data_dir / "on-reset-spawn-points.assets.json"
         )
         self._driving_actors_manager = ActorManager(client)
+        self._scenario_area = CircleArea(location=carla.Location(0, 0, 0), radius=100)
 
     def reset(self, ego_vehicle: carla.Vehicle):
         # Actors
@@ -62,6 +71,8 @@ class RoundaboutExitingScenario(Scenario):
         self._route = route.build_roundabout_checkpoint_route(
             start_node=start_node, nth_exit_to_take=self._take_nth_exit
         )
+
+        # States
         self._next_route_checkpoint_idx = 0
         self._command = ChauffeurCommand.LANE_FOLLOW
         self._steps_to_reach_next_checkpoint = MAX_NUM_STEPS_TO_REACH_CHECKPOINT
@@ -75,12 +86,11 @@ class RoundaboutExitingScenario(Scenario):
         ego_location = ego_transform.location
         next_checkpoint = self._route[self._next_route_checkpoint_idx]
 
-        # DEBUG
+        # Displaying checkpoints' areas server-side
         # for route_checkpoint in self.route:
         #     color = carla.Color(random.randrange(255), random.randrange(255), random.randrange(255))
         #     route_checkpoint.draw(self._world, color=color, life_time=0.1)
-        next_checkpoint.draw(self._world, life_time=0.01)
-        # DEBUG
+        # next_checkpoint.draw(self._world, life_time=0.01)
 
         checkpoint_area = next_checkpoint.area
         reward = 0

@@ -64,7 +64,11 @@ class RoundaboutExitingScenario(Scenario):
         # Ego vehicle
         start_node = random.choice(TOWN03_ROUNDABOUT_NODES)
         start_node.spawn_point.location.z = 0.1
+
+        # Physics trick is necessary to prevent vehicle from keeping the velocity
+        ego_vehicle.set_simulate_physics(False)
         ego_vehicle.set_transform(start_node.spawn_point)
+        ego_vehicle.set_simulate_physics(True)
 
         # Route
         self._take_nth_exit = random.randrange(1, 5)

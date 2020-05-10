@@ -8,6 +8,9 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
+with open('requirements.txt') as f:
+    requirements = [r.strip() for r in f]
+
 setup(
     name='carla_real_traffic_scenarios',
     version='0.2.1',
@@ -16,6 +19,7 @@ setup(
     author_email='TODO',
     url='TODO',
     license=license,
+    install_requires=requirements,
     packages=find_packages(exclude=('tests', 'docs'))
 )
 

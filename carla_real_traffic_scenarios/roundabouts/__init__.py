@@ -38,10 +38,7 @@ class RoundaboutScenario(Scenario):
 
     def __init__(self, client: carla.Client, sparse_reward_mode: bool = False):
         super().__init__(client)
-        self._client = client
         self._sparse_reward_mode = sparse_reward_mode
-        self._world = client.get_world()
-        self._map = self._world.get_map()
 
         # Saving state between consecutive steps
         self._next_route_checkpoint_idx: Optional[int] = None
@@ -142,7 +139,7 @@ class RoundaboutScenario(Scenario):
             self._next_route_checkpoint_idx += 1
 
         is_ego_offroad = (
-            self._map.get_waypoint(ego_location, project_to_road=False) is None
+            self._world_map.get_waypoint(ego_location, project_to_road=False) is None
         )
         if is_ego_offroad:
             # alternatively may want to give negative rewards and not end the episode

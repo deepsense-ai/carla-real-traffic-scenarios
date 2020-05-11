@@ -2,13 +2,11 @@ import carla
 import math
 from typing import NamedTuple, List
 
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.types import (
+from carla_real_traffic_scenarios.roundabouts.types import (
     RoundaboutNode,
     RouteCheckpoint,
 )
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.scenario import (
-    ChauffeurCommand,
-)
+from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 
 
 def build_roundabout_checkpoint_route(

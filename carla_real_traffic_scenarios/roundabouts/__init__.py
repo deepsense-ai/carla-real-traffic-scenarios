@@ -1,7 +1,7 @@
 import carla
 import random
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from carla_real_traffic_scenarios import FPS
 from carla_real_traffic_scenarios.assets import markings
@@ -11,12 +11,13 @@ from carla_real_traffic_scenarios.roundabouts.Town03.nodes import (
     TOWN03_ROUNDABOUT_NODES,
 )
 from carla_real_traffic_scenarios.roundabouts import route
-from carla_real_traffic_scenarios.roundabouts.types import CircleArea, RoundaboutNode
+from carla_real_traffic_scenarios.roundabouts.types import CircleArea, RoundaboutNode, RouteCheckpoint
 from carla_real_traffic_scenarios.scenario import (
     ScenarioStepResult,
     Scenario,
     ChauffeurCommand,
 )
+from carla_real_traffic_scenarios.utils import geometry
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 DEBUG = True

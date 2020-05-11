@@ -1,8 +1,5 @@
 import carla
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts.types import (
-    RoundaboutNode,
-    CircleArea,
-)
+from carla_real_traffic_scenarios.roundabouts.types import RoundaboutNode, CircleArea
 
 node3 = RoundaboutNode(
     name="Node3 - right",

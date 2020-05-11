@@ -2,10 +2,8 @@ import carla
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.scenario import ChauffeurCommand
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.utils import (
-    geometry,
-)
+from carla_real_traffic_scenarios.scenario import ChauffeurCommand
+from carla_real_traffic_scenarios.utils import geometry
 
 
 class CircleArea(NamedTuple):
@@ -26,9 +24,8 @@ class RoundaboutNode:
     final_area_for_next_exit: CircleArea
     next_node: "RoundaboutNode"
 
+
 class RouteCheckpoint(NamedTuple):
     name: str
     area: CircleArea
     command: ChauffeurCommand
-
-

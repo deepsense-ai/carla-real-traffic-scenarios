@@ -19,6 +19,15 @@ from carla_real_traffic_scenarios.scenario import (
 )
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
+DEBUG = True
+
+
+def debug_draw(area: CircleArea, world: carla.World, **kwargs):
+    world.debug.draw_point(area.center, **kwargs)
+    xs, ys = geometry.points_on_ring(radius=area.radius, num_points=10)
+    for x, y in zip(xs, ys):
+        center = carla.Location(x=area.center.x + x, y=area.center.y + y, z=0.2)
+        world.debug.draw_point(center, **kwargs)
 
 
 class RoundaboutScenario(Scenario):
@@ -109,11 +118,11 @@ class RoundaboutScenario(Scenario):
         ego_location = ego_transform.location
         next_checkpoint = self._route[self._next_route_checkpoint_idx]
 
-        # Displaying checkpoints' areas server-side
-        # for route_checkpoint in self.route:
-        #     color = carla.Color(random.randrange(255), random.randrange(255), random.randrange(255))
-        #     route_checkpoint.draw(self._world, color=color, life_time=0.1)
-        # next_checkpoint.draw(self._world, life_time=0.01)
+        if DEBUG:
+            color = carla.Color(153, 255, 51)  # light green
+            for route_checkpoint in self._route:
+                debug_draw(route_checkpoint.area, self._world, color=color, life_time=0.01)
+            debug_draw(next_checkpoint.area, self._world, life_time=0.01)
 
         checkpoint_area = next_checkpoint.area
         reward = 0

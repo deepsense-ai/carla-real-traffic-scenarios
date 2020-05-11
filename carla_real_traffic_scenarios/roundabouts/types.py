@@ -31,12 +31,4 @@ class RouteCheckpoint(NamedTuple):
     area: CircleArea
     command: ChauffeurCommand
 
-    # FIXME Could be a method of CircleArea instead...
-    def draw(self, world: carla.World, **kwargs):
-        world.debug.draw_point(self.area.location, **kwargs)
-        xs, ys = geometry.points_on_ring(radius=self.area.radius, num_points=10)
-        for x, y in zip(xs, ys):
-            center = carla.Location(
-                x=self.area.location.x + x, y=self.area.location.y + y, z=0.1
-            )
-            world.debug.draw_point(center, **kwargs)
+

@@ -1,6 +1,4 @@
-import carla
-import math
-from typing import NamedTuple, List
+from typing import List
 
 from carla_real_traffic_scenarios.roundabouts.types import (
     RoundaboutNode,

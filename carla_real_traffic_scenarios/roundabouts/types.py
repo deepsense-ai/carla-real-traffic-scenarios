@@ -9,11 +9,11 @@ from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.utils import
 
 
 class CircleArea(NamedTuple):
-    location: carla.Location
+    center: carla.Location
     radius: float
 
     def __contains__(self, loc: carla.Location) -> bool:
-        dist = geometry.distance(loc, self.location)
+        dist = geometry.distance(loc, self.center)
         return dist <= self.radius
 
 

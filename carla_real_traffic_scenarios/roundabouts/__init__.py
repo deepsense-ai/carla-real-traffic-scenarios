@@ -55,7 +55,7 @@ class RoundaboutScenario(Scenario):
             path=data_dir / "on-reset-spawn-points.assets.json"
         )
         self._driving_actors_manager = ActorManager(client)
-        self._scenario_area = CircleArea(location=carla.Location(0, 0, 0), radius=100)
+        self._scenario_area = CircleArea(center=carla.Location(0, 0, 0), radius=100)
 
     def reset(self, ego_vehicle: carla.Vehicle):
         # Actors

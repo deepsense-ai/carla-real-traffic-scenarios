@@ -11,7 +11,11 @@ from carla_real_traffic_scenarios.roundabouts.Town03.nodes import (
     TOWN03_ROUNDABOUT_NODES,
 )
 from carla_real_traffic_scenarios.roundabouts import route
-from carla_real_traffic_scenarios.roundabouts.types import CircleArea, RoundaboutNode, RouteCheckpoint
+from carla_real_traffic_scenarios.roundabouts.types import (
+    CircleArea,
+    RoundaboutNode,
+    RouteCheckpoint,
+)
 from carla_real_traffic_scenarios.scenario import (
     ScenarioStepResult,
     Scenario,
@@ -33,8 +37,22 @@ def debug_draw(area: CircleArea, world: carla.World, **kwargs):
 
 class RoundaboutScenario(Scenario):
     """
-    Randomly chooses which exit to take and gives "turn right" after passing by the last roundabout checkpoint.
+    Randomly chooses which roundabout exit the ego agent must take.
+    "Turn right" command will be given just after entering the last checkpoint located on roundabout ring.
     Only Town03 roundabout is currently supported, but it's trivial to use with custom maps (just provide new marking files)
+
+    Checkpoints can be visualized by toggling DEBUG flag.
+
+    Specification:
+    1. Ego vehicle must be on a road, otherwise reset() is triggered
+       (alternatively may want to modify this behavior and just give negative rewards)
+
+    2. Collision with other vehicle instantly triggers reset()
+       
+    3. Sparse reward mode: agent will get reward==1 when it reaches final checkpoint
+
+    4. Dense reward mode (default): agent will get 1/n reward for each of n checkpoints
+        and additional 1 for final checkpoint (max reward == 2)
     """
 
     def __init__(self, client: carla.Client, sparse_reward_mode: bool = False):
@@ -120,7 +138,9 @@ class RoundaboutScenario(Scenario):
         if DEBUG:
             color = carla.Color(153, 255, 51)  # light green
             for route_checkpoint in self._route:
-                debug_draw(route_checkpoint.area, self._world, color=color, life_time=0.01)
+                debug_draw(
+                    route_checkpoint.area, self._world, color=color, life_time=0.01
+                )
             debug_draw(next_checkpoint.area, self._world, life_time=0.01)
 
         checkpoint_area = next_checkpoint.area
@@ -144,12 +164,10 @@ class RoundaboutScenario(Scenario):
             self._world_map.get_waypoint(ego_location, project_to_road=False) is None
         )
         if is_ego_offroad:
-            # alternatively may want to give negative rewards and not end the episode
             reward = 0
             done = True
 
         if self._next_route_checkpoint_idx == len(self._route):
-            # NOTE in default (dense) reward mode, agent will get 2 points for completing whole route
             reward = 1
             done = True
 

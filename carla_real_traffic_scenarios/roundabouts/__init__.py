@@ -63,6 +63,7 @@ class RoundaboutScenario(Scenario):
         )
         self._driving_actors_manager = ActorManager(client)
         self._scenario_area = CircleArea(center=carla.Location(0, 0, 0), radius=100)
+        self._route: Optional[List[RouteCheckpoint]] = None
 
     def reset(self, ego_vehicle: carla.Vehicle):
         # Actors

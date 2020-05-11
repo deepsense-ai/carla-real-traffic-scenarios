@@ -21,7 +21,7 @@ from carla_real_traffic_scenarios.scenario import (
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 
 
-class RoundaboutExitingScenario(Scenario):
+class RoundaboutScenario(Scenario):
     """
     Randomly chooses which exit to take and gives "turn right" after passing by the last roundabout checkpoint.
     Only Town03 roundabout is currently supported, but it's trivial to use with custom maps (just provide new marking files)

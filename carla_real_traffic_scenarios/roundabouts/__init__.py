@@ -20,7 +20,7 @@ from carla_real_traffic_scenarios.scenario import (
 from carla_real_traffic_scenarios.utils import geometry
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
-DEBUG = True
+DEBUG = False
 
 
 def debug_draw(area: CircleArea, world: carla.World, **kwargs):

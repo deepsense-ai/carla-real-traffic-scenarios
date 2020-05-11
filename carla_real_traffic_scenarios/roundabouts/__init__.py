@@ -41,6 +41,8 @@ class RoundaboutScenario(Scenario):
     "Turn right" command will be given just after entering the last checkpoint located on roundabout ring.
     Only Town03 roundabout is currently supported, but it's trivial to use with custom maps (just provide new marking files)
 
+    It is advised (but not enforced by this implementation) to use CARLA synchronous mode - calling `world.tick()`
+    after reset() or step(). Code example can be found in __main__.py (`roundabouts` package)
     Checkpoints can be visualized by toggling DEBUG flag.
 
     Specification:

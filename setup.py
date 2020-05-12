@@ -20,6 +20,7 @@ setup(
     url='TODO',
     license=license,
     install_requires=requirements,
-    packages=find_packages(exclude=('tests', 'docs'))
+    packages=find_packages(exclude=('tests', 'docs')),
+    include_package_data=True
 )
 

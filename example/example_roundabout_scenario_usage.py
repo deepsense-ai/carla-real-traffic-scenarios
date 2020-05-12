@@ -1,10 +1,9 @@
 import carla
-from libs.carla_real_traffic_scenarios.carla_real_traffic_scenarios.roundabouts import (
-    RoundaboutExitingScenario,
-)
+from carla_real_traffic_scenarios.carla_maps import CarlaMaps
+from carla_real_traffic_scenarios.roundabouts import RoundaboutScenario
 from carla_real_traffic_scenarios import DT
 
-synch = True
+SYNCHRONOUS_MODE = True
 
 
 def set_birds_eye_view_spectator(
@@ -20,8 +19,8 @@ def set_birds_eye_view_spectator(
 client = carla.Client("localhost", 2000)
 client.set_timeout(3.0)
 
-world = client.get_world()
-if synch:
+world = client.load_world(CarlaMaps.TOWN03.level_path)
+if SYNCHRONOUS_MODE:
     settings = world.get_settings()
     settings.synchronous_mode = True
     settings.fixed_delta_seconds = DT
@@ -35,20 +34,26 @@ agent_vehicle = world.spawn_actor(bp, map.get_spawn_points()[0])
 
 spectator = world.get_spectator()
 set_birds_eye_view_spectator(spectator, carla.Location(), above=80)
-
-scenario = RoundaboutExitingScenario(client)
+scenario = RoundaboutScenario(client)
 scenario.reset(agent_vehicle)
-if synch:
+if SYNCHRONOUS_MODE:
     world.tick()
 
+print("Scenario has been loaded")
 done = False
+episode_reward = 0
 try:
     while True:
         result = scenario.step(agent_vehicle)
-        if synch:
+        if SYNCHRONOUS_MODE:
             world.tick()
+        episode_reward += result.reward
+
         if result.done:
+            print("Episode reward:", episode_reward)
             scenario.reset(agent_vehicle)
+            episode_reward = 0
+            print("Scenario has been reset")
 finally:
     settings = world.get_settings()
     settings.synchronous_mode = False

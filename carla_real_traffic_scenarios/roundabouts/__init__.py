@@ -138,10 +138,13 @@ class RoundaboutScenario(Scenario):
         next_checkpoint = self._route[self._next_route_checkpoint_idx]
 
         if DEBUG:
-            color = carla.Color(153, 255, 51)  # light green
+            lightgreen_color = carla.Color(153, 255, 51)
             for route_checkpoint in self._route:
                 debug_draw(
-                    route_checkpoint.area, self._world, color=color, life_time=0.01
+                    route_checkpoint.area,
+                    self._world,
+                    color=lightgreen_color,
+                    life_time=1.0 / FPS,
                 )
             debug_draw(next_checkpoint.area, self._world, life_time=0.01)
 

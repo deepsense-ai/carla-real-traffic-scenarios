@@ -1,9 +1,7 @@
 import carla
 from dataclasses import dataclass
 from typing import NamedTuple
-
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand
-from carla_real_traffic_scenarios.utils import geometry
 
 
 class CircleArea(NamedTuple):
@@ -11,8 +9,7 @@ class CircleArea(NamedTuple):
     radius: float
 
     def __contains__(self, loc: carla.Location) -> bool:
-        dist = geometry.distance(loc, self.center)
-        return dist <= self.radius
+        return loc.distance(self.center) <= self.radius
 
 
 @dataclass

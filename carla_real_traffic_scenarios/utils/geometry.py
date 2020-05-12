@@ -26,12 +26,6 @@ def normalize_angle_npy(angles: np.ndarray) -> np.ndarray:
     return angles
 
 
-def distance(a: carla.Location, b: carla.Location) -> float:
-    dx = a.x - b.x
-    dy = a.y - b.y
-    return np.sqrt(dx * dx + dy * dy)
-
-
 def points_on_ring(radius: float, num_points: int) -> Tuple[np.array, np.array]:
     """Generates `n` coordinates lying on a ring with radius `r` and center at (0, 0)."""
     t = np.linspace(0, 2 * np.pi, num_points)

@@ -1037,7 +1037,6 @@ class World(object):
         self.actors_with_transforms = [(actor, actor.get_transform()) for actor in actors]
         if self.hero_actor is not None:
             self.hero_transform = self.hero_actor.get_transform()
-            print(self.town_map.get_waypoint(self.hero_transform.location).lane_id)
 
         self.update_hud_info(clock)
 

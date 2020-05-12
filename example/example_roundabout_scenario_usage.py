@@ -34,7 +34,6 @@ agent_vehicle = world.spawn_actor(bp, map.get_spawn_points()[0])
 
 spectator = world.get_spectator()
 set_birds_eye_view_spectator(spectator, carla.Location(), above=80)
-
 scenario = RoundaboutScenario(client)
 scenario.reset(agent_vehicle)
 if SYNCHRONOUS_MODE:

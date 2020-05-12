@@ -85,7 +85,8 @@ class NGSimVehiclesInCarla:
 
     def close(self):
         for v in self._vehicle_by_vehicle_id.values():
-            v.destroy()
+            if v.is_alive:
+                v.destroy()
 
 
 def find_best_matching_model(ngsim_car: NGSimCar) -> Optional[VehicleModel]:

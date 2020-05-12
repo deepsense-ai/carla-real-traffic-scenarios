@@ -1,4 +1,5 @@
 import carla
+from carla_real_traffic_scenarios.carla_maps import CarlaMaps
 from carla_real_traffic_scenarios.roundabouts import RoundaboutScenario
 from carla_real_traffic_scenarios import DT
 
@@ -18,7 +19,7 @@ def set_birds_eye_view_spectator(
 client = carla.Client("localhost", 2000)
 client.set_timeout(3.0)
 
-world = client.get_world()
+world = client.load_world(CarlaMaps.TOWN03.level_path)
 if SYNCHRONOUS_MODE:
     settings = world.get_settings()
     settings.synchronous_mode = True

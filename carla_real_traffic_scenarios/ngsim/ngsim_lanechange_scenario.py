@@ -171,3 +171,9 @@ class NGSimLaneChangeScenario(Scenario):
         if self._ngsim_vehicles_in_carla:
             self._ngsim_vehicles_in_carla.close()
             self._ngsim_vehicles_in_carla = None
+
+        self._lane_change_instants = []
+        self._lane_change = None
+
+        del self._ngsim_recording
+        self._ngsim_recording = None

@@ -50,9 +50,9 @@ try:
         episode_reward += result.reward
 
         if result.done:
+            print("Episode reward:", episode_reward)
             scenario.reset(agent_vehicle)
             episode_reward = 0
-            print("Episode reward:", episode_reward)
             print("Scenario has been reset")
 finally:
     settings = world.get_settings()

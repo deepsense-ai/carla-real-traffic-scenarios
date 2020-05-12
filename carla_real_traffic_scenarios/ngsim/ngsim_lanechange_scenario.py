@@ -172,6 +172,9 @@ class NGSimLaneChangeScenario(Scenario):
             self._ngsim_vehicles_in_carla.close()
             self._ngsim_vehicles_in_carla = None
 
+        if self._collision_sensor and self._collision_sensor.is_alive:
+            self._collision_sensor.destroy()
+
         self._lane_change_instants = []
         self._lane_change = None
 

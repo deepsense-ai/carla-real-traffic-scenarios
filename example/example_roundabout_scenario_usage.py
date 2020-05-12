@@ -40,14 +40,21 @@ scenario.reset(agent_vehicle)
 if SYNCHRONOUS_MODE:
     world.tick()
 
+print("Scenario has been loaded")
 done = False
+episode_reward = 0
 try:
     while True:
         result = scenario.step(agent_vehicle)
         if SYNCHRONOUS_MODE:
             world.tick()
+        episode_reward += result.reward
+
         if result.done:
             scenario.reset(agent_vehicle)
+            episode_reward = 0
+            print("Episode reward:", episode_reward)
+            print("Scenario has been reset")
 finally:
     settings = world.get_settings()
     settings.synchronous_mode = False

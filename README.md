@@ -39,7 +39,7 @@ python example/example_roundabout_scenario_usage.py
 ```
 ##### Terminal III
 ```bash
-# (wait until scenario script connects successfully)
+# (wait until scenario script connects successfully, map rendering may tak a while)
 python example/manual_driving.py --res 640x480
 ```
 Code tested with CARLA 0.9.6.

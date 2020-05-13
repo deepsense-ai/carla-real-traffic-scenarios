@@ -21,9 +21,9 @@ CARLA real traffic scenarios
     export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.6-py3.6-linux-x86_64.egg:$PYTHONPATH
     ```
 2. You also need to install our asset packages with two new CARLA maps
-    - Download archives - **TODO LINK**
-    - Copy archives to `$CARLA_ROOT/Import`
-    - Import `cd Import && ./ImportAssets.sh`
+    - Download our archive: [Google Drive download link](https://drive.google.com/open?id=1dFnf4jciDu9OsUqP5_FE_LxBf72wyfRJ)
+    - Move the archive to: `$CARLA_ROOT/Import`
+    - Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
 
 ### Quickstart
 
@@ -45,8 +45,13 @@ python example/manual_driving.py --res 900x500
 Code tested with CARLA 0.9.6.
 
 ### Real-traffic scenarios
-* `python example/example_replay_ngsim_in_carla.py` - shows how to run scenario in training loop.
-* `python example/example_replay_ngsim_in_carla.py` - shows how to replay NGSim dataset in CARLA. It was used to generated GIF in this README file.
+
+1. Download dataset: [Google Drive download link](http://bit.ly/PPUU-data)
+2. Unpack: `tar xf xy-trajectories.tgz`
+3. Adjust `data_dir` in source code with your path to `xy-trajectories`
+
+* `python example/example_scenario_usage.py` - shows how to run scenario in training loop
+* `python example/example_replay_ngsim_in_carla.py` - shows how to replay NGSim dataset in CARLA. It was used to generated GIF in this README file
 
 ### Credits
 

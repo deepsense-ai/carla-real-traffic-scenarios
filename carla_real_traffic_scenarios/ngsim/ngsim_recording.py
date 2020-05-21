@@ -8,13 +8,15 @@ import pandas as pd
 
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, \
-    NGSimTimeslot, NGSimDatasets
-from carla_real_traffic_scenarios.ngsim.cords_mapping import MAPPER_BY_NGSIM_DATASET, PIXELS_TO_METERS, \
-    LANE_WIDTH_PIXELS, METER_TO_PIXELS, FOOT_TO_METERS
+    NGSimTimeslot, \
+    NGSimDatasets
+from carla_real_traffic_scenarios.ngsim.cords_mapping import MAPPER_BY_NGSIM_DATASET
+from carla_real_traffic_scenarios.ngsim.ngsim_carla_sync import find_best_matching_model
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehicle, find_best_matching_model
 from carla_real_traffic_scenarios.utils.pandas import swap_columns_inplace
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector2
+from carla_real_traffic_scenarios.vehicles import VEHICLE_BY_TYPE_ID
 
 X_OFFSET_PIXELS = 470  # horizontal offset (camera 2 leftmost view)
 MAX_SPEED = 130
@@ -231,7 +233,7 @@ class NGSimRecording(Simulator):
         self.smoothing_window = 15
         self.max_frame = -1
 
-        self._mapper = MAPPER_BY_NGSIM_DATASET[ngsim_dataset]
+        self._mapper = MAPPER_BY_NGSIM_DATASET[ngsim_dataset.name]
 
     def _init_df(self, data_dir, x_offset_meters):
         self.lane_change_instants = []

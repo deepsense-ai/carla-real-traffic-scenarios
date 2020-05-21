@@ -7,14 +7,12 @@ import numpy as np
 
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
-from carla_real_traffic_scenarios.ngsim.cords_mapping import MAPPER_BY_NGSIM_DATASET
 from carla_real_traffic_scenarios.ngsim.ngsim_carla_sync import NGSimVehiclesInCarla
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
 from carla_real_traffic_scenarios.utils.geometry import normalize_angle
 from carla_real_traffic_scenarios.utils.transforms import distance_between_on_plane
-from carla_real_traffic_scenarios.vehicles import VEHICLE_BY_TYPE_ID
 
 CROSSTRACK_ERROR_TOLERANCE = 0.3
 YAW_DEG_ERRORS_TOLERANCE = 10
@@ -81,11 +79,12 @@ class NGSimLaneChangeScenario(Scenario):
 
         def on_collided(e):
             self._collided = True
+
         self._collision_sensor.listen(on_collided)
 
         self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
 
-        self._ngsim_vehicles_in_carla = NGSimVehiclesInCarla(self._client, self._world, self._ngsim_dataset)
+        self._ngsim_vehicles_in_carla = NGSimVehiclesInCarla(self._client, self._world)
         self._target_alignment_counter = 0
 
         self._previous_chauffeur_command = self._lane_change.chauffeur_command
@@ -98,9 +97,7 @@ class NGSimLaneChangeScenario(Scenario):
         agent_ngsim_vehicle = find_first_matching(ngsim_vehicles, lambda v: v.id == self._lane_change.vehicle_id)
         other_ngsim_vehicles = [v for v in ngsim_vehicles if v.id != self._lane_change.vehicle_id]
 
-        mapper = MAPPER_BY_NGSIM_DATASET[self._ngsim_dataset]
-        v_data = VEHICLE_BY_TYPE_ID[vehicle.type_id]
-        t = mapper.ngsim_to_carla(agent_ngsim_vehicle.get_transform(), v_data.z_offset, v_data.rear_axle_offset)
+        t = agent_ngsim_vehicle.get_transform()
         vehicle.set_transform(t.as_carla_transform())
         v = t.orientation * agent_ngsim_vehicle._speed * PIXELS_TO_METERS
         vehicle.set_velocity(v.to_vector3(0).as_carla_vector3d())  # meters per second,

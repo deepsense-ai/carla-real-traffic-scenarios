@@ -56,7 +56,8 @@ class NGSimVehiclesInCarla:
             previous_vehicles_ids = set(self._vehicle_by_vehicle_id.keys())
 
             for to_remove_id in previous_vehicles_ids - now_vehicle_ids:
-                self._vehicle_by_vehicle_id[to_remove_id].destroy()
+                actor = self._vehicle_by_vehicle_id[to_remove_id]
+                commands.append(carla.command.DestroyActor(actor.id))
                 del self._vehicle_by_vehicle_id[to_remove_id]
 
         # TODO batch spawn and batch destroy

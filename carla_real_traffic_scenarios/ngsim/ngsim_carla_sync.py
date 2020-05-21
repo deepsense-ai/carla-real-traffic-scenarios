@@ -3,26 +3,22 @@ import random
 from typing import Dict, Optional
 
 import carla
-
-from carla_real_traffic_scenarios.ngsim import NGSimDataset
-from carla_real_traffic_scenarios.ngsim.cords_mapping import MAPPER_BY_NGSIM_DATASET
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimCar
 from carla_real_traffic_scenarios.utils.collections import smallest_by
 from carla_real_traffic_scenarios.utils.geometry import jaccard_rectangles
 from carla_real_traffic_scenarios.utils.transforms import Transform
-from carla_real_traffic_scenarios.vehicles import VehicleModel, VEHICLES, VEHICLE_BY_TYPE_ID
+from carla_real_traffic_scenarios.vehicles import VehicleModel, VEHICLES
 
 LOGGER = logging.getLogger(__name__)
 
 
 class NGSimVehiclesInCarla:
 
-    def __init__(self, client: carla.Client, world: carla.World, ngsim_dataset: NGSimDataset):
+    def __init__(self, client: carla.Client, world: carla.World):
         self._vehicle_by_vehicle_id: Dict[int, carla.Vehicle] = {}
         self._client = client
         self._world = world
         self._ignored_ngsim_vehicle_ids = set()
-        self._mapper = MAPPER_BY_NGSIM_DATASET[ngsim_dataset]
 
     def step(self, vehicles):
         commands = []
@@ -32,28 +28,21 @@ class NGSimVehiclesInCarla:
             if ngsim_v.id in self._ignored_ngsim_vehicle_ids:
                 continue
 
+            target_transform = ngsim_v.get_transform()  # transform in carla coordinates
             if ngsim_v.id in self._vehicle_by_vehicle_id:
                 carla_v = self._vehicle_by_vehicle_id[ngsim_v.id]
-                v_data = VEHICLE_BY_TYPE_ID[carla_v.type_id]
-                t = self._mapper.ngsim_to_carla(ngsim_v.get_transform(), carla_v.get_transform().location.z,
-                                                v_data.rear_axle_offset)
-                commands.append(carla.command.ApplyTransform(carla_v, t.as_carla_transform()))
+                target_transform = Transform(target_transform.position.with_z(carla_v.get_transform().location.z),
+                                             target_transform.orientation)
+                commands.append(carla.command.ApplyTransform(carla_v, target_transform.as_carla_transform()))
             else:
-                model = find_best_matching_model(ngsim_v)
-
-                if model is None:
-                    LOGGER.debug(f"Not found matching vehicle model for vehicle {ngsim_v}")
-                    continue
-
-                target_transform = self._mapper.ngsim_to_carla(ngsim_v.get_transform(), model.z_offset,
-                                                               model.rear_axle_offset)
                 spawn_transform = Transform(target_transform.position.with_z(500), target_transform.orientation)
-                vehicle_blueprint = self._get_vehicle_blueprint(model.type_id)
+                vehicle_blueprint = self._get_vehicle_blueprint(ngsim_v.type_id)
                 vehicle_blueprint.set_attribute('role_name', 'ngsim_replay')
                 carla_v = self._world.try_spawn_actor(vehicle_blueprint, spawn_transform.as_carla_transform())
                 if carla_v is None:
                     LOGGER.info(
-                        f"Error spawning vehicle with id {ngsim_v.id}. Ignoring it now in the future. Model: {model.type_id}.")
+                        f"Error spawning vehicle with id {ngsim_v.id}. Ignoring it now in the future. "
+                        f"Model: {ngsim_v.type_id}.")
                     # Without ignoring such vehicles till the end of episode a vehicle might suddenly appears mid-road
                     # in future frames
                     self._ignored_ngsim_vehicle_ids.add(ngsim_v.id)
@@ -89,14 +78,14 @@ class NGSimVehiclesInCarla:
                 v.destroy()
 
 
-def find_best_matching_model(ngsim_car: NGSimCar) -> Optional[VehicleModel]:
+def find_best_matching_model(vehicle_width_m, vehicle_length_m) -> Optional[VehicleModel]:
     USE_STRICTLY_SMALLER = False
 
     if USE_STRICTLY_SMALLER:
         # using stricly smaller models ensures that there will be no collisions
         models = [
             m for m in VEHICLES if
-            m.bounding_box.extent.x * 2 < ngsim_car.length_m and m.bounding_box.extent.y * 2 < ngsim_car.width_m
+            m.bounding_box.extent.x * 2 < vehicle_length_m and m.bounding_box.extent.y * 2 < vehicle_width_m
         ]
     else:
         models = list(VEHICLES)
@@ -104,10 +93,10 @@ def find_best_matching_model(ngsim_car: NGSimCar) -> Optional[VehicleModel]:
     if len(models) == 0:
         return None
 
-    def calc_fitness(ngsim_car: NGSimCar, vehicle_model: VehicleModel):
+    def calc_fitness(vehicle_model: VehicleModel):
         return jaccard_rectangles(
-            ngsim_car.length_m, ngsim_car.width_m,
+            vehicle_length_m, vehicle_width_m,
             vehicle_model.bounding_box.extent.x * 2, vehicle_model.bounding_box.extent.y * 2
         )
 
-    return smallest_by(models, lambda m: -calc_fitness(ngsim_car, m))
+    return smallest_by(models, lambda m: -calc_fitness(m))

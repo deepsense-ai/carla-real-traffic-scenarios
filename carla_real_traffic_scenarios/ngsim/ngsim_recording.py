@@ -10,9 +10,12 @@ from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, \
     NGSimTimeslot, \
     NGSimDatasets
+from carla_real_traffic_scenarios.ngsim.cords_mapping import MAPPER_BY_NGSIM_DATASET
+from carla_real_traffic_scenarios.ngsim.ngsim_carla_sync import find_best_matching_model
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.pandas import swap_columns_inplace
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector2
+from carla_real_traffic_scenarios.vehicles import VEHICLE_BY_TYPE_ID
 
 LANE_WIDTH_METERS = 3.7
 LANE_WIDTH_PIXELS = 24  # pixels / 3.7 m, lane width
@@ -35,7 +38,6 @@ colours = {
 }
 
 LOGGER = logging.getLogger(__name__)
-
 
 # Car coordinate system, origin under the centre of the rear axis
 #
@@ -73,7 +75,7 @@ class NGSimCar:
     max_a = 40
     max_b = 0.01
 
-    def __init__(self, df, y_offset, kernel=0):
+    def __init__(self, df, y_offset, *, mapper, kernel=0):
         k = kernel  # running window size
         self.length_m = df.at[df.index[0], 'Vehicle Length'] * FOOT_TO_METERS
         self.width_m = df.at[df.index[0], 'Vehicle Width'] * FOOT_TO_METERS
@@ -94,6 +96,9 @@ class NGSimCar:
         self._direction = self._get('init_direction', 0)
         self._speed = self._get('speed', 0)
         self.off_screen = self._max_t <= 0
+        model = find_best_matching_model(self.width_m, self.length_m)
+        self.type_id = model.type_id
+        self._mapper = mapper
 
     def step(self, action):  # takes also the parameter action = state temporal derivative
         """
@@ -128,6 +133,11 @@ class NGSimCar:
             Vector2.from_numpy(self.front).to_vector3(0),
             Vector2.from_numpy(self._direction),
         )
+
+    def get_carla_transform(self):
+        transform = self.get_transform()
+        model = VEHICLE_BY_TYPE_ID[self.type_id]
+        return self._mapper.ngsim_to_carla(transform, model.z_offset, model.rear_axle_offset)
 
     def get_velocity(self) -> Vector2:
         direction = Vector2.from_numpy(self._direction)
@@ -221,6 +231,8 @@ class NGSimRecording(Simulator):
         self.smoothing_window = 15
         self.max_frame = -1
 
+        self._mapper = MAPPER_BY_NGSIM_DATASET[ngsim_dataset.name]
+
     def _init_df(self, data_dir, x_offset_meters):
         self.lane_change_instants = []
 
@@ -303,7 +315,7 @@ class NGSimRecording(Simulator):
             this_vehicle = df['Vehicle ID'] == vehicle_id
             car_df = df[this_vehicle & now_and_on]
             if len(car_df) < self.smoothing_window + 1: continue
-            car = NGSimCar(car_df, self.offset, self.smoothing_window)
+            car = NGSimCar(car_df, self.offset, kernel=self.smoothing_window, mapper=self._mapper)
             self.env_cars.append(car)
         self.vehicles_history_ids |= vehicles_ids  # union set operation
 

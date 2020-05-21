@@ -13,7 +13,6 @@ from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AF
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.pandas import swap_columns_inplace
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector2
-from carla_real_traffic_scenarios.utils.units import KMH_TO_MPS
 
 LANE_WIDTH_METERS = 3.7
 LANE_WIDTH_PIXELS = 24  # pixels / 3.7 m, lane width
@@ -64,14 +63,10 @@ assert DT == 0.1, "I80 dataset is sampled with dt=0.1 which conveniently matches
 
 class Simulator:
 
-    def __init__(self, fps=30):
+    def __init__(self):
         self.offset = int(1.5 * LANE_WIDTH_PIXELS)
-        self.fps = fps  # updates per second
         self.frame = 0  # frame index
         self.env_cars = None  # vehicles list
-        self.mean_fps = None
-        self.look_ahead = MAX_SPEED * KMH_TO_MPS * METER_TO_PIXELS
-        self.user_is_done = None
 
 
 class NGSimCar:
@@ -292,14 +287,11 @@ class NGSimRecording(Simulator):
         self.frame = frame
         self._timeslot = timeslot
         self.env_cars = list()
-        self.mean_fps = None
-        self.time_counter = 0
 
-        self.user_is_done = False
         self.max_frame = max(self._df_by_timeslot[self._timeslot]['Frame ID'])
         self.vehicles_history_ids = set()
 
-    def step(self) -> (List[NGSimCar], bool):
+    def step(self) -> List[NGSimCar]:
         assert self.frame < self.max_frame
 
         df = self._df_by_timeslot[self._timeslot]

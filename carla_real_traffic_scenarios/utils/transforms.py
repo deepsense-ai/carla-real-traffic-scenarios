@@ -111,10 +111,6 @@ class Vector2(NamedTuple):
         return carla.Rotation(yaw=float(yaw), roll=float(0), pitch=float(0))
 
     @staticmethod
-    def from_carla_orientation(orientation):
-        return Vector2(orientation.x, orientation.y)
-
-    @staticmethod
     def from_carla_rotation(rotation):
         yaw_rad = rotation.yaw * math.pi / 180
         x, y = math.cos(yaw_rad), math.sin(yaw_rad)

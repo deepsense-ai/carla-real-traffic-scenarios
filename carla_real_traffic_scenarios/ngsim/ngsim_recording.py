@@ -15,7 +15,6 @@ from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehicle, find_best_matching_model
 from carla_real_traffic_scenarios.utils.pandas import swap_columns_inplace
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector2
-from carla_real_traffic_scenarios.vehicles import VEHICLE_BY_TYPE_ID
 
 X_OFFSET_PIXELS = 470  # horizontal offset (camera 2 leftmost view)
 MAX_SPEED = 130

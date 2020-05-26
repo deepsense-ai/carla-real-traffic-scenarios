@@ -1,13 +1,14 @@
-import logging
-
 import cv2.cv2 as cv2
 import numpy as np
 
-from carla_real_traffic_scenarios.ngsim.ngsim_recording import PIXELS_TO_METERS
 from carla_real_traffic_scenarios.ngsim import NGSimDatasets
 from carla_real_traffic_scenarios.utils.transforms import Vector2, Transform
 
-LOGGER = logging.getLogger(__name__)
+LANE_WIDTH_METERS = 3.7
+LANE_WIDTH_PIXELS = 24  # pixels / 3.7 m, lane width
+METER_TO_PIXELS = LANE_WIDTH_PIXELS / LANE_WIDTH_METERS
+PIXELS_TO_METERS = 1. / METER_TO_PIXELS
+FOOT_TO_METERS = 0.3048  # metres per foot
 
 
 class NGSimToCarlaMapper:

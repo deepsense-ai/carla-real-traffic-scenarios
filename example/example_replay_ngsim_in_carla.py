@@ -1,8 +1,9 @@
 import carla
+
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import NGSimDatasets, US101Timeslots
-from carla_real_traffic_scenarios.ngsim.ngsim_carla_sync import NGSimVehiclesInCarla
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording
+from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
         settings.fixed_delta_seconds = DT
         world.apply_settings(settings)
 
-        ngsim_vehicles_in_carla = NGSimVehiclesInCarla(carla_client, world)
+        ngsim_vehicles_in_carla = RealTrafficVehiclesInCarla(carla_client, world)
         for _ in range(10000):
             vehicles = ngsim_recording.step()
             ngsim_vehicles_in_carla.step(vehicles)

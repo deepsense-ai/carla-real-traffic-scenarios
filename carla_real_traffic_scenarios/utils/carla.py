@@ -1,11 +1,12 @@
 import logging
-import random
 from typing import Dict, Optional, NamedTuple
+
+import random
 
 import carla
 from carla_real_traffic_scenarios.utils.collections import smallest_by
 from carla_real_traffic_scenarios.utils.geometry import jaccard_rectangles
-from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3
+from carla_real_traffic_scenarios.utils.transforms import Transform
 from carla_real_traffic_scenarios.vehicles import VehicleModel, VEHICLES
 
 LOGGER = logging.getLogger(__name__)
@@ -14,12 +15,10 @@ LOGGER = logging.getLogger(__name__)
 class RealTrafficVehicle(NamedTuple):
     id: int
     type_id: str
-    timestamp_s: float
     width_m: float
     length_m: float
     transform: Transform
     speed: float
-    debug: Optional[str]
 
 
 class RealTrafficVehiclesInCarla:
@@ -61,10 +60,6 @@ class RealTrafficVehiclesInCarla:
                     carla.command.ApplyTransform(carla_vehicle, target_transform.as_carla_transform())
                 )
                 self._vehicle_by_vehicle_id[real_vehicle.id] = carla_vehicle
-
-            if real_vehicle.debug:
-                self._world.debug.draw_string((target_transform.position + Vector3(2, 0, 4)).as_carla_location(),
-                                              str(real_vehicle.debug))
 
             now_vehicle_ids = {v.id for v in vehicles}
             previous_vehicles_ids = set(self._vehicle_by_vehicle_id.keys())
@@ -116,37 +111,3 @@ def find_best_matching_model(vehicle_width_m, vehicle_length_m) -> Optional[Vehi
         )
 
     return smallest_by(models, lambda m: -calc_fitness(m))
-
-
-def setup_carla_settings(client: carla.Client, synchronous: bool, time_delta_s: float):
-    world = client.get_world()
-    settings = world.get_settings()
-    changed = False
-    if settings.synchronous_mode != synchronous:
-        LOGGER.warning(f"Switch synchronous_mode={synchronous}")
-        settings.synchronous_mode = synchronous
-        changed = True
-    if settings.fixed_delta_seconds != time_delta_s:
-        LOGGER.warning(f"Change fixed_delta_seconds={time_delta_s}")
-        settings.fixed_delta_seconds = time_delta_s
-        changed = True
-    if changed:
-        world.apply_settings(settings)
-
-
-class CollisionSensor:
-
-    def __init__(self, world: carla.World, carla_vehicle: carla.Vehicle):
-        self.has_collided = False
-
-        def on_collision(e):
-            self.has_collided = True
-
-        blueprint_library = world.get_blueprint_library()
-        blueprint = blueprint_library.find('sensor.other.collision')
-        self._collision_sensor = world.spawn_actor(blueprint, carla_vehicle.get_transform(), attach_to=carla_vehicle)
-        self._collision_sensor.listen(on_collision)
-
-    def destroy(self):
-        if self._collision_sensor and self._collision_sensor.is_alive:
-            self._collision_sensor.destroy()

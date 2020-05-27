@@ -6,6 +6,7 @@ import pandas as pd
 import skimage.transform
 
 from carla_real_traffic_scenarios import DT
+from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehicle, find_best_matching_model
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3, Vector2
 
@@ -92,8 +93,8 @@ class OpenDDVehicle:
 
 class OpenDDRecording():
 
-    def __init__(self, db_path, timedelta_s: float = DT) -> None:
-        self._db_path = db_path
+    def __init__(self, dataset: OpenDDDataset, timedelta_s: float = DT) -> None:
+        self._dataset = dataset
         self._env_vehicles = []
         self._vehicles_history_ids = set()
         self._df: Optional[pd.DataFrame] = None
@@ -103,7 +104,9 @@ class OpenDDRecording():
     def reset(self, table_name, frame: int = 0):
         if self._df:
             del self._df
-        with sqlite3.connect(self._db_path) as conn:
+
+        place_name = table_name.split('_')[0]
+        with sqlite3.connect(self._dataset.db_path) as conn:
             df = pd.read_sql(f'select * from {table_name}', conn)
 
             # create timedelta index from TIMESTAMP column (pd.Grouper uses it)
@@ -119,8 +122,9 @@ class OpenDDRecording():
         self._env_vehicles = []
         self._vehicles_history_ids = set()
 
-        rdb5_params = [0.0196412289, -0.0194725998, -0.0194582564, -0.0196517711, 617364.3249885776, 5806856.7566900905]
-        self._transformer = Utm2CarlaMapper(rdb5_params, [3840, 2160])
+        place_params = self._dataset.places_params[place_name]
+        self._transformer = Utm2CarlaMapper(place_params.world_params, place_params.image_size)
+        self.place_params = place_params
 
     def step(self) -> List[RealTrafficVehicle]:
         timestamp = self._timestamps[self._frame]

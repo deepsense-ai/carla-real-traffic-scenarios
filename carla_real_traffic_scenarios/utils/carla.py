@@ -6,7 +6,7 @@ import random
 import carla
 from carla_real_traffic_scenarios.utils.collections import smallest_by
 from carla_real_traffic_scenarios.utils.geometry import jaccard_rectangles
-from carla_real_traffic_scenarios.utils.transforms import Transform
+from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3
 from carla_real_traffic_scenarios.vehicles import VehicleModel, VEHICLES
 
 LOGGER = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ class RealTrafficVehicle(NamedTuple):
     length_m: float
     transform: Transform
     speed: float
+    debug: Optional[str]
 
 
 class RealTrafficVehiclesInCarla:
@@ -60,6 +61,10 @@ class RealTrafficVehiclesInCarla:
                     carla.command.ApplyTransform(carla_vehicle, target_transform.as_carla_transform())
                 )
                 self._vehicle_by_vehicle_id[real_vehicle.id] = carla_vehicle
+
+            if real_vehicle.debug:
+                self._world.debug.draw_string((target_transform.position + Vector3(2, 0, 4)).as_carla_location(),
+                                              str(real_vehicle.debug))
 
             now_vehicle_ids = {v.id for v in vehicles}
             previous_vehicles_ids = set(self._vehicle_by_vehicle_id.keys())

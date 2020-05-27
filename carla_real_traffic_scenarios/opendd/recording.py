@@ -20,22 +20,36 @@ class Utm2CarlaMapper:
              [world_file_params[1], world_file_params[3], world_file_params[5]],
              [0, 0, 1]]))
         utm2pix_transform = skimage.transform.AffineTransform(pix2utm_transform._inv_matrix)
-        self._affine_transform = utm2pix_transform + \
-                                 skimage.transform.AffineTransform(translation=-image_middle) + \
-                                 skimage.transform.AffineTransform(scale=1 / np.array(utm2pix_transform.scale))
+        self.utm2pix_transformer = utm2pix_transform
+        self.utm2carla_transformer = utm2pix_transform + \
+                                     skimage.transform.AffineTransform(translation=-image_middle) + \
+                                     skimage.transform.AffineTransform(scale=1 / np.array(utm2pix_transform.scale))
+
+    def utm2pix(self, transform: Transform):
+        return self._transform_with_convert(transform, self.utm2pix_transformer)
 
     def utm2carla(self, transform: Transform):
-        utm_position = transform.position.as_numpy()[:2]
-        utm_orientation = transform.orientation.as_numpy() + utm_position
+        return self._transform_with_convert(transform, self.utm2carla_transformer)
 
-        position = self._affine_transform(utm_position.reshape(-1, 2)).squeeze()
-        orientation = self._affine_transform(utm_orientation.reshape(-1, 2)).squeeze()
-        orientation = orientation - position
+    def _transform_with_convert(self, transform: Transform, transformer: skimage.transform.AffineTransform):
+        position = transform.position.as_numpy()[:2]
+        position = position.reshape(-1, 2)
+        orientation = transform.orientation.as_numpy()
+        orientation = orientation.reshape(-1, 2)
 
-        position = Vector2.from_numpy(position).to_vector3(0)
-        orientation = Vector2.from_numpy(orientation)
+        position, orientation = self.transform(position, orientation, transformer)
 
+        position = Vector2.from_numpy(position.squeeze()).to_vector3(0)
+        orientation = Vector2.from_numpy(orientation.squeeze())
         return Transform(position, orientation)
+
+    def transform(self, positions: np.ndarray, orientations: np.ndarray,
+                  transformer: skimage.transform.AffineTransform):
+        orientations = positions + orientations
+        positions = transformer(positions)
+        orientations = transformer(orientations)
+        orientations -= orientations - positions
+        return positions, orientations
 
 
 class OpenDDVehicle:
@@ -51,6 +65,7 @@ class OpenDDVehicle:
         self._frame = 0
         self._max_frame = len(df)
         self._transformer = transformer
+        # TODO: transform coordinates on init
 
     def step(self):
         self._frame += 1
@@ -65,9 +80,7 @@ class OpenDDVehicle:
 
     @property
     def transform(self):
-        utm_x = self._df.UTM_X.iloc[self._frame]
-        utm_y = self._df.UTM_Y.iloc[self._frame]
-        utm_angle_rad = self._df.UTM_ANGLE.iloc[self._frame]
+        utm_x, utm_y, utm_angle_rad = self._df.iloc[self._frame][['UTM_X', 'UTM_Y', 'UTM_ANGLE']].values
         x, y = np.cos(utm_angle_rad), np.sin(utm_angle_rad)
 
         position = Vector3(utm_x, utm_y, 0)
@@ -99,7 +112,8 @@ class OpenDDRecording():
         self._vehicles_history_ids = set()
         self._df: Optional[pd.DataFrame] = None
         self._frame = 0
-        self._simulation_timedelta_s = timedelta_s
+        self._timedelta_s = timedelta_s
+        self._timestamps = []
 
     def reset(self, table_name, frame: int = 0):
         if self._df:
@@ -112,7 +126,7 @@ class OpenDDRecording():
             # create timedelta index from TIMESTAMP column (pd.Grouper uses it)
             df = df.set_index(pd.TimedeltaIndex(df.TIMESTAMP, 's'))
             # group by OBJID and resample TimedeltaIndex to target fps
-            freq_ms = int(self._simulation_timedelta_s * 1000)
+            freq_ms = int(self._timedelta_s * 1000)
             grouper = df.groupby([pd.Grouper(freq=f'{freq_ms}ms'), 'OBJID'])
             df = grouper.last()  # take last observation from grouped bins
             self._df = df.reset_index(level=['OBJID'])  # recover OBJID column
@@ -122,7 +136,7 @@ class OpenDDRecording():
         self._env_vehicles = []
         self._vehicles_history_ids = set()
 
-        place_params = self._dataset.places_params[place_name]
+        place_params = self._dataset.places[place_name]
         self._transformer = Utm2CarlaMapper(place_params.world_params, place_params.image_size)
         self.place_params = place_params
 

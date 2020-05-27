@@ -1,6 +1,7 @@
 import sqlite3
 from typing import List, Optional
 
+import more_itertools
 import numpy as np
 import pandas as pd
 import skimage.transform
@@ -156,7 +157,9 @@ class OpenDDRecording():
             v.step()
 
         self._frame += 1
-        return [v.as_real_traffic_car() for v in self._env_vehicles]
+        real_traffic_vehicles = [v.as_real_traffic_car() for v in self._env_vehicles]
+        assert all([v1.timestamp_s == v2.timestamp_s for v1, v2 in more_itertools.windowed(real_traffic_vehicles, 2)])
+        return real_traffic_vehicles
 
     def close(self):
         pass

@@ -183,7 +183,7 @@ class NGSimCar:
 
     def as_real_traffic_car(self):
         carla_transform = self.get_carla_transform()
-        return RealTrafficVehicle(self.id, self.type_id, self.width_m, self.length_m, carla_transform, self._speed)
+        return RealTrafficVehicle(self.id, self.type_id, self.width_m, self.length_m, carla_transform, self._speed, debug=False)
 
 
 class LaneChangeInstant(NamedTuple):

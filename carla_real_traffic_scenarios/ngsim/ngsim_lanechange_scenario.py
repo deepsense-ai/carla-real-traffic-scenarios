@@ -2,14 +2,14 @@ import hashlib
 import logging
 import random
 
-import carla
 import numpy as np
 
+import carla
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
-from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla
+from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
 from carla_real_traffic_scenarios.utils.geometry import normalize_angle
 from carla_real_traffic_scenarios.utils.transforms import distance_between_on_plane
@@ -31,14 +31,7 @@ class NGSimLaneChangeScenario(Scenario):
                  client: carla.Client):
         super().__init__(client)
 
-        settings = self._world.get_settings()
-        if not settings.synchronous_mode:
-            LOGGER.warning("Only synchronous_mode==True supported. Will change to synchronous_mode==True")
-            settings.synchronous_mode = True
-        if settings.fixed_delta_seconds != DT:
-            LOGGER.warning(f"Only fixed_delta_seconds=={DT} supported. Will change to fixed_delta_seconds=={DT}")
-            settings.fixed_delta_seconds = DT
-        self._world.apply_settings(settings)
+        setup_carla_settings(client, synchronous=True, time_delta_s=DT)
 
         self._ngsim_recording = NGSimRecording(
             data_dir=data_dir, ngsim_dataset=ngsim_dataset,

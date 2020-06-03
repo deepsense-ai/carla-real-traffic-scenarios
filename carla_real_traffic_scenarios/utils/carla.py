@@ -1,7 +1,6 @@
 import logging
-from typing import Dict, Optional, NamedTuple
-
 import random
+from typing import Dict, Optional, NamedTuple
 
 import carla
 from carla_real_traffic_scenarios.utils.collections import smallest_by
@@ -116,3 +115,19 @@ def find_best_matching_model(vehicle_width_m, vehicle_length_m) -> Optional[Vehi
         )
 
     return smallest_by(models, lambda m: -calc_fitness(m))
+
+
+def setup_carla_settings(client: carla.Client, synchronous: bool, time_delta_s: float):
+    world = client.get_world()
+    settings = world.get_settings()
+    changed = False
+    if settings.synchronous_mode != synchronous:
+        LOGGER.warning(f"Switch synchronous_mode={synchronous}")
+        settings.synchronous_mode = synchronous
+        changed = True
+    if settings.fixed_delta_seconds != time_delta_s:
+        LOGGER.warning(f"Change fixed_delta_seconds={time_delta_s}")
+        settings.fixed_delta_seconds = time_delta_s
+        changed = True
+    if changed:
+        world.apply_settings(settings)

@@ -5,6 +5,10 @@ from typing import NamedTuple, Tuple, Dict
 import numpy as np
 from PIL import Image
 
+_BLACKLISTED_SESSION_NAMES_DUE_TO_WRONG_GEOREFERENCE = [
+    'rdb6_2DJI_0006', 'rdb6_2DJI_0007', 'rdb6_2DJI_0008', 'rdb6_2DJI_0009', 'rdb6_DJI_0016', 'rdb3_M1DJI_0021'
+]
+BLACKLISTED_SESSION_NAMES = _BLACKLISTED_SESSION_NAMES_DUE_TO_WRONG_GEOREFERENCE
 
 class Place(NamedTuple):
     name: str
@@ -26,7 +30,9 @@ class OpenDDDataset:
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT tbl_name FROM sqlite_master WHERE type='table'")
-            return [row[0] for row in cursor.fetchall()]
+            session_names = [row[0] for row in cursor.fetchall()]
+            session_names = [n for n in session_names if n not in BLACKLISTED_SESSION_NAMES]
+            return session_names
 
     def _fetch_places(self, dataset_dir):
         georeferenced_images_dir = dataset_dir / 'image_georeferenced'

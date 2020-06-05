@@ -14,6 +14,7 @@ LOGGER = logging.getLogger(__name__)
 class RealTrafficVehicle(NamedTuple):
     id: int
     type_id: str
+    timestamp_s: float
     width_m: float
     length_m: float
     transform: Transform

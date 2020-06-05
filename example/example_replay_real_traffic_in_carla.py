@@ -43,7 +43,7 @@ def create_simulator(dataset_name):
 
         dataset = OpenDDDataset(OPENDD_DIR)
         simulator = OpenDDRecording(dataset)
-        time_slots = [ts for ts in dataset.time_slots if dataset_details in ts]
+        time_slots = [ts for ts in dataset.session_names if dataset_details in ts]
         time_slot = random.choice(time_slots)
 
         simulator.reset(time_slot, 0)

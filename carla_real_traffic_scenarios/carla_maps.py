@@ -17,4 +17,10 @@ class CarlaMaps:
     TOWN07 = CarlaMap("Town07", "/Game/Carla/Maps/Town07")
     I80 = CarlaMap("I-80", "/Game/real-traffic/Maps/I-80/I-80")
     US101 = CarlaMap("US-101", "/Game/real-traffic/Maps/US-101/US-101")
+    RDB1 = CarlaMap("RDB1", "/Game/real-traffic/Maps/rdb1/rdb1")
+    RDB2 = CarlaMap("RDB2", "/Game/real-traffic/Maps/rdb2/rdb2")
+    RDB3 = CarlaMap("RDB3", "/Game/real-traffic/Maps/rdb3/rdb3")
+    RDB4 = CarlaMap("RDB4", "/Game/real-traffic/Maps/rdb4/rdb4")
+    RDB5 = CarlaMap("RDB5", "/Game/real-traffic/Maps/rdb5/rdb5")
+    RDB6 = CarlaMap("RDB6", "/Game/real-traffic/Maps/rdb6/rdb6")
 

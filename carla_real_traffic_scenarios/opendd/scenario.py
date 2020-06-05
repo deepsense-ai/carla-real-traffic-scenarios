@@ -84,30 +84,28 @@ class RewardCalculator:
 
 class DenseRewardCalculator(RewardCalculator):
 
-    def __init__(self, opendd_ego_vehicle: OpenDDVehicle) -> None:
+    def __init__(self, opendd_ego_vehicle: OpenDDVehicle, num_waypoints: int = 5) -> None:
         self._opendd_ego_vehicle = opendd_ego_vehicle
-        self._progress = self._calc_progress_vector()
-        self._finish_at_idx = int(np.ceil(0.97 * len(opendd_ego_vehicle.trajectory_carla)))
-        self._prev_idx = 0
+        trajectory_length = len(opendd_ego_vehicle.trajectory_carla)
+        self._waypoint_idxes = np.linspace(0, trajectory_length, num_waypoints + 1, dtype='int')[1:]  # do not use idx=0
+        self._finish_at_idx = trajectory_length
+        self._completed_waypoints = -1
+        self._reward_quant = 1 / num_waypoints
 
         # for faster nearest trajectory point calculation
         self._trajectory_carla = [t.position.as_numpy()[:2] for t in self._opendd_ego_vehicle.trajectory_carla]
-
-    def _calc_progress_vector(self):
-        trajectory_carla = self._opendd_ego_vehicle.trajectory_carla
-        distances_m = [0, ] + [
-            distance_between(t1.position, t2.position)
-            for t1, t2 in more_itertools.windowed(trajectory_carla, 2)
-        ]
-        cumulative_distances_m = np.cumsum(distances_m)
-        return cumulative_distances_m / cumulative_distances_m[-1]
 
     def __call__(self, transform_carla: carla.Transform):
         idx, min_distance_from_trajectory_m = self._find_nearest_trajectory_point(transform_carla)
         trajectory_finished = idx >= self._finish_at_idx
         moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > MAX_DISTANCE_FROM_TRAJECTORY_M
-        reward = self._progress[idx] - self._progress[self._prev_idx]
-        self._prev_idx = idx
+
+        completed_waypoints = np.where(self._waypoint_idxes <= idx)[0]
+        current_completed_waypoint = completed_waypoints[-1] if len(completed_waypoints) else -1
+        reward = self._reward_quant * max(current_completed_waypoint - self._completed_waypoints, 0)
+
+        self._completed_waypoints = max(current_completed_waypoint, self._completed_waypoints)
+
         return reward, trajectory_finished or moved_away_too_far_from_trajectory
 
     def _find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, float]:

@@ -1,32 +1,40 @@
-import os
 import logging
-from pathlib import Path
 import random
+from pathlib import Path
 from typing import Union, Optional, List, Tuple
 
-import carla
+import more_itertools
 import numpy as np
 import scipy.spatial
 
+import carla
 from carla_real_traffic_scenarios import DT
-from carla_real_traffic_scenarios.early_stop import EarlyStop, EarlyStopMonitor
 from carla_real_traffic_scenarios.ngsim import DatasetMode
+from carla_real_traffic_scenarios.opendd import RewardType
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
-from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
-from carla_real_traffic_scenarios.trajectory import Trajectory
 from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
-from carla_real_traffic_scenarios.utils.transforms import Vector2
-from sim2real.runner import DONE_CAUSE_KEY
+from carla_real_traffic_scenarios.utils.transforms import Vector2, distance_between
 
 LOGGER = logging.getLogger()
-MAX_DISTANCE_FROM_REF_TRAJECTORY_M = 3
-NUM_CHECKPOINTS = 10
 
 
-def _quantify_progress(progress, num_checkpoints=NUM_CHECKPOINTS):
-    return np.floor(progress * num_checkpoints) / num_checkpoints
+class CollisionSensor:
+
+    def __init__(self, world: carla.World, carla_vehicle: carla.Vehicle):
+        self.has_collided = False
+
+        def on_collision(e):
+            self.has_collided = True
+
+        blueprint_library = world.get_blueprint_library()
+        blueprint = blueprint_library.find('sensor.other.collision')
+        self._collision_sensor = world.spawn_actor(blueprint, carla_vehicle.get_transform(), attach_to=carla_vehicle)
+        self._collision_sensor.listen(on_collision)
+
+    def destroy(self):
+        self._collision_sensor.destroy()
 
 
 class Chauffeur:
@@ -65,99 +73,119 @@ class Chauffeur:
         return self._cmds[idx]
 
 
+MAX_DISTANCE_FROM_TRAJECTORY_M = 10
+
+
+class RewardCalculator:
+
+    def __call__(self, transform_carla: carla.Transform):
+        raise NotImplementedError()
+
+
+class DenseRewardCalculator(RewardCalculator):
+
+    def __init__(self, opendd_ego_vehicle: OpenDDVehicle) -> None:
+        self._opendd_ego_vehicle = opendd_ego_vehicle
+        self._progress = self._calc_progress_vector()
+        self._finish_at_idx = int(np.ceil(0.97 * len(opendd_ego_vehicle.trajectory_carla)))
+        self._prev_idx = 0
+
+        # for faster nearest trajectory point calculation
+        self._trajectory_carla = [t.position.as_numpy()[:2] for t in self._opendd_ego_vehicle.trajectory_carla]
+
+    def _calc_progress_vector(self):
+        trajectory_carla = self._opendd_ego_vehicle.trajectory_carla
+        distances_m = [0, ] + [
+            distance_between(t1.position, t2.position)
+            for t1, t2 in more_itertools.windowed(trajectory_carla, 2)
+        ]
+        cumulative_distances_m = np.cumsum(distances_m)
+        return cumulative_distances_m / cumulative_distances_m[-1]
+
+    def __call__(self, transform_carla: carla.Transform):
+        idx, min_distance_from_trajectory_m = self._find_nearest_trajectory_point(transform_carla)
+        trajectory_finished = idx >= self._finish_at_idx
+        moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > MAX_DISTANCE_FROM_TRAJECTORY_M
+        reward = self._progress[idx] - self._progress[self._prev_idx]
+        self._prev_idx = idx
+        return reward, trajectory_finished or moved_away_too_far_from_trajectory
+
+    def _find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, float]:
+        transform_carla = np.array([transform_carla.location.x, transform_carla.location.y])
+        dm = scipy.spatial.distance_matrix([transform_carla], self._trajectory_carla)
+        idx = int(np.argmin(dm, axis=1)[0])
+        return idx, dm[0][idx]
+
+
+class SparseRewardCalculator(DenseRewardCalculator):
+
+    def __call__(self, transform_carla: carla.Transform):
+        idx, min_distance_from_trajectory_m = self._find_nearest_trajectory_point(transform_carla)
+        trajectory_finished = idx >= self._finish_at_idx
+        moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > MAX_DISTANCE_FROM_TRAJECTORY_M
+        reward = float(trajectory_finished)
+        return reward, trajectory_finished or moved_away_too_far_from_trajectory
+
+
 class OpenDDScenario(Scenario):
-    def __init__(
-        self,
-        client: carla.Client,
-        *,
-        dataset_dir: Union[str, Path],
-        reward_type: RewardType,
-        dataset_mode: DatasetMode,
-        place_name: Optional[str] = None,
-    ):
+
+    def __init__(self, client: carla.Client, *, dataset_dir: Union[str, Path], reward_type: RewardType,
+                 dataset_mode: DatasetMode, place_name: Optional[str] = None):
         super().__init__(client)
 
         setup_carla_settings(client, synchronous=True, time_delta_s=DT)
 
         self._dataset = OpenDDDataset(dataset_dir)
-        self._recording = OpenDDRecording(dataset=self._dataset, dataset_mode=dataset_mode)
+        self._recording = OpenDDRecording(self._dataset)
         self._dataset_mode = dataset_mode
         self._reward_type = reward_type
         self._place_name = place_name
 
         self._chauffeur: Optional[Chauffeur] = None
-        self._early_stop_monitor: Optional[EarlyStopMonitor] = None
+        self._ego_vehicle_collision_sensor: Optional[CollisionSensor] = None
+        self._reward_calculator: Optional[RewardCalculator] = None
         self._carla_sync: Optional[RealTrafficVehiclesInCarla] = None
-        self._current_progress = 0
 
     def reset(self, ego_vehicle: carla.Vehicle):
+        if self._ego_vehicle_collision_sensor:
+            self._ego_vehicle_collision_sensor.destroy()
+            self._ego_vehicle_collision_sensor = None
+        self._ego_vehicle_collision_sensor = CollisionSensor(self._world, ego_vehicle)
+
         if self._carla_sync:
             self._carla_sync.close()
         self._carla_sync = RealTrafficVehiclesInCarla(self._client, self._world)
 
-        if self._early_stop_monitor:
-            self._early_stop_monitor.close()
-
         session_names = self._dataset.session_names
         if self._place_name:
             session_names = [n for n in session_names if self._place_name.lower() in n]
-        epseed = os.environ.get("epseed")
-        if epseed:
-            epseed = int(epseed)
-            random.seed(epseed)
         session_name = random.choice(session_names)
-        ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name, seed=epseed)
-        self._sampled_dataset_excerpt_info = dict(
-            session_name=session_name,
-            timestamp_start_s=timestamp_start_s,
-            timestamp_end_s=timestamp_end_s,
-            original_veh_id=ego_id,
-        )
+        self._recording.reset(session_name=session_name, frame=None)
         env_vehicles = self._recording.step()
+        ego_id = random.choice(env_vehicles).id
         other_vehicles = [v for v in env_vehicles if v.id != ego_id]
         self._carla_sync.step(other_vehicles)
 
         opendd_ego_vehicle = self._recording._env_vehicles[ego_id]
-        opendd_ego_vehicle.set_end_of_trajectory_timestamp(timestamp_end_s)
         self._chauffeur = Chauffeur(opendd_ego_vehicle, self._recording.place.roads_utm)
+        self._reward_calculator = DenseRewardCalculator(opendd_ego_vehicle)
 
         ego_vehicle.set_transform(opendd_ego_vehicle.transform_carla.as_carla_transform())
         ego_vehicle.set_velocity(opendd_ego_vehicle.velocity.as_carla_vector3d())
 
-        self._current_progress = 0
-        trajectory_carla = [t.as_carla_transform() for t in opendd_ego_vehicle.trajectory_carla]
-        self._trajectory = Trajectory(trajectory_carla=trajectory_carla)
-        timeout_s = (timestamp_end_s - timestamp_start_s) * 1.5
-        timeout_s = min(timeout_s, self._recording._timestamps[-1] - timestamp_start_s)
-        self._early_stop_monitor = EarlyStopMonitor(ego_vehicle, timeout_s=timeout_s, trajectory=self._trajectory,
-                                                    max_trajectory_distance_m=MAX_DISTANCE_FROM_REF_TRAJECTORY_M)
-
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
         ego_transform = ego_vehicle.get_transform()
-        original_veh_transform = self._chauffeur.vehicle.transform_carla.as_carla_transform()
+        ego_location = ego_transform.location
 
-        progress = self._get_progress(ego_transform)
-        progress_change = max(0, _quantify_progress(progress) - _quantify_progress(self._current_progress))
-        self._current_progress = progress
-
-        scenario_finished_with_success = progress >= 1.0
-        early_stop = EarlyStop.NONE
-        if not scenario_finished_with_success:
-            early_stop = self._early_stop_monitor(ego_transform)
-            if self._recording.has_finished:
-                early_stop |= EarlyStop.TIMEOUT
-        done = scenario_finished_with_success | bool(early_stop)
-        reward = int(self._reward_type == RewardType.DENSE) * progress_change
-        reward += int(scenario_finished_with_success)
-        reward += int(bool(early_stop)) * -1
-
+        reward, has_ego_finished_or_move_away_to_far = self._reward_calculator(ego_transform)
+        has_ego_collided = self._ego_vehicle_collision_sensor.has_collided
+        is_ego_offroad = self._world_map.get_waypoint(ego_location, project_to_road=False) is None
+        is_too_late_to_reach_checkpoint = False
         cmd = self._chauffeur.get_cmd(ego_transform)
-        done_info = {}
-        if done and scenario_finished_with_success:
-            done_info[DONE_CAUSE_KEY] = 'success'
-        elif done and early_stop:
-            done_info[DONE_CAUSE_KEY] = early_stop.decomposed_name('_').lower()
-
+        done = has_ego_collided | \
+               is_ego_offroad | \
+               has_ego_finished_or_move_away_to_far | \
+               is_too_late_to_reach_checkpoint
         info = {
             'opendd_dataset': {
                 'session': self._recording.session_name,
@@ -165,13 +193,8 @@ class OpenDDScenario(Scenario):
                 'objid': self._chauffeur.vehicle.id,
                 'dataset_mode': self._dataset_mode.name,
             },
-            'scenario_data': {
-                'ego_veh': ego_vehicle,
-                'original_veh_transform': original_veh_transform,
-                'original_to_ego_distance': original_veh_transform.location.distance(ego_transform.location)
-            },
-            'reward_type': self._reward_type.name,
-            **done_info
+            'reward_type': self._reward_type.name
+            # 'target_alignment_counter': self._target_alignment_counter,
         }
 
         env_vehicles = self._recording.step()
@@ -181,9 +204,9 @@ class OpenDDScenario(Scenario):
         return ScenarioStepResult(cmd, reward, done, info)
 
     def close(self):
-        if self._early_stop_monitor:
-            self._early_stop_monitor.close()
-            self._early_stop_monitor = None
+        if self._ego_vehicle_collision_sensor:
+            self._ego_vehicle_collision_sensor.destroy()
+            self._ego_vehicle_collision_sensor = None
 
         if self._carla_sync:
             self._carla_sync.close()
@@ -192,7 +215,3 @@ class OpenDDScenario(Scenario):
             self._recording.close()
             del self._recording
             self._recording = None
-
-    def _get_progress(self, ego_transform: carla.Transform):
-        s, *_ = self._trajectory.find_nearest_trajectory_point(ego_transform)
-        return s / self._trajectory.total_length_m

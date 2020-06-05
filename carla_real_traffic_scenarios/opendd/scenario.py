@@ -160,13 +160,14 @@ class OpenDDScenario(Scenario):
         if self._place_name:
             session_names = [n for n in session_names if self._place_name.lower() in n]
         session_name = random.choice(session_names)
-        self._recording.reset(session_name=session_name, frame=None)
+        ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name)
+
         env_vehicles = self._recording.step()
-        ego_id = random.choice(env_vehicles).id
         other_vehicles = [v for v in env_vehicles if v.id != ego_id]
         self._carla_sync.step(other_vehicles)
 
         opendd_ego_vehicle = self._recording._env_vehicles[ego_id]
+        opendd_ego_vehicle.set_end_of_trajectory_timestamp(timestamp_end_s)
         self._chauffeur = Chauffeur(opendd_ego_vehicle, self._recording.place.roads_utm)
         self._reward_calculator = DenseRewardCalculator(opendd_ego_vehicle)
 

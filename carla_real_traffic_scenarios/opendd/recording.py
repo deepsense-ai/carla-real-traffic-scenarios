@@ -224,7 +224,8 @@ class OpenDDRecording():
         self._session_name = session_name
         with sqlite3.connect(self._dataset.db_path) as conn:
             df = pd.read_sql(f'select * from {session_name}', conn)
-            df = df[~df.CLASS.str.contains('Pedestrian|Bicycle')]  # for now do not extract pedestrians and bicycles
+            # for now do not extract pedestrians, bicycles and trailers
+            df = df[~df.CLASS.str.contains('Pedestrian|Bicycle|Trailer')]
             df = _resample_df(df, self._timedelta_s)
             self._timestamps = np.arange(df.TIMESTAMP.min(),
                                          df.TIMESTAMP.max() + self._timedelta_s,

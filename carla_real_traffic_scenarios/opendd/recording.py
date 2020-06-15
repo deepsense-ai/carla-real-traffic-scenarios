@@ -157,7 +157,7 @@ def _find_ego_vehicle_with_time_frame(place, session_df):
         ego_id = random.choice(all_objids)
         obj_df = session_df[session_df.OBJID == ego_id]
         start_idx, stop_idx = _trim_trajectory_utm_to_entry_end_exit(place, obj_df)
-        if start_idx is None or stop_idx is None:
+        if start_idx is None or stop_idx is None or start_idx >= stop_idx:
             continue
 
         timestamp_start_s = obj_df.iloc[start_idx].TIMESTAMP
@@ -201,8 +201,6 @@ def _trim_trajectory_utm_to_entry_end_exit(place, obj_df):
             dm_exits[nearest_exit_idx][trajectory_end_idx:] < PRE_ENTRY_DISTANCE_M
         )[0][-1]
 
-    assert trajectory_start_idx is None or trajectory_end_idx is None or trajectory_start_idx < trajectory_end_idx, \
-        (trajectory_start_idx, trajectory_end_idx, place.name)
     return trajectory_start_idx, trajectory_end_idx
 
 

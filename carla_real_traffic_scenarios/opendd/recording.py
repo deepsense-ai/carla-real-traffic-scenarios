@@ -242,12 +242,17 @@ class OpenDDRecording():
 
     def step(self) -> List[RealTrafficVehicle]:
         timestamp_s = self._timestamps[self._frame]
-        vehicles_current_ids = self._df[self._df.TIMESTAMP == timestamp_s].OBJID.to_list()
+        vehicles_current_ids = self._df[
+            np.isclose(self._df.TIMESTAMP, timestamp_s)
+        ].OBJID.to_list()
 
         for vehicle_id in vehicles_current_ids:
             if vehicle_id not in self._env_vehicles:
                 # TODO: check if x/y smoothing is not required (in ngsim dataset there is smoothing in 15 frames wnd)
-                new_vehicle_df = self._df[(self._df.OBJID == vehicle_id) & (self._df.TIMESTAMP >= timestamp_s)]
+                new_vehicle_df = self._df[
+                    (self._df.OBJID == vehicle_id) &
+                    ((self._df.TIMESTAMP >= timestamp_s) | np.isclose(self._df.TIMESTAMP, timestamp_s))
+                ]
                 self._env_vehicles[vehicle_id] = OpenDDVehicle(new_vehicle_df, self._transformer)
 
         self._env_vehicles = {k: v for k, v in self._env_vehicles.items() if not v.has_finished}

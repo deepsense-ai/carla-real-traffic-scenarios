@@ -167,7 +167,10 @@ class OpenDDScenario(Scenario):
         opendd_ego_vehicle = self._recording._env_vehicles[ego_id]
         opendd_ego_vehicle.set_end_of_trajectory_timestamp(timestamp_end_s)
         self._chauffeur = Chauffeur(opendd_ego_vehicle, self._recording.place.roads_utm)
-        self._reward_calculator = DenseRewardCalculator(opendd_ego_vehicle)
+        self._reward_calculator = {
+            RewardType.SPARSE: SparseRewardCalculator,
+            RewardType.DENSE: DenseRewardCalculator
+        }[self._reward_type](opendd_ego_vehicle)
 
         ego_vehicle.set_transform(opendd_ego_vehicle.transform_carla.as_carla_transform())
         ego_vehicle.set_velocity(opendd_ego_vehicle.velocity.as_carla_vector3d())

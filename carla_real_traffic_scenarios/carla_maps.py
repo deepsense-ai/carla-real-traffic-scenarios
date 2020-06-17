@@ -23,4 +23,5 @@ class CarlaMaps:
     RDB4 = CarlaMap("RDB4", "/Game/real-traffic/Maps/rdb4/rdb4")
     RDB5 = CarlaMap("RDB5", "/Game/real-traffic/Maps/rdb5/rdb5")
     RDB6 = CarlaMap("RDB6", "/Game/real-traffic/Maps/rdb6/rdb6")
+    RDB7 = CarlaMap("RDB7", "/Game/real-traffic/Maps/rdb7/rdb7")
 

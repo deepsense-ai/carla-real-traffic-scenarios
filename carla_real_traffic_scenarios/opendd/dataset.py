@@ -16,6 +16,7 @@ BLACKLISTED_SESSION_NAMES = _BLACKLISTED_SESSION_NAMES_DUE_TO_WRONG_GEOREFERENCE
 _ROUNDABOUTS_TOPOLOGIES = {
     'rdb1': {
         'roundabout_center_utm': Vector2(619304.556058351, 5809147.733704892),  # (52.419519, 10.754369)
+        'map_center_utm': Vector2(619301.201, 5809149.760),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(619323.465, 5809153.332), Vector2(619324.167, 5809145.383)),  # ((2622, 894), (2670, 1146))
             (Vector2(619292.150, 5809163.147), Vector2(619299.362, 5809166.923)),  # ((1587, 681), (1806, 537))
@@ -25,6 +26,7 @@ _ROUNDABOUTS_TOPOLOGIES = {
     },
     'rdb2': {
         'roundabout_center_utm': Vector2(618082.795, 5805733.190),  # (1896, 1023),
+        'map_center_utm': Vector2(618080.465, 5805732.301),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(618068.770, 5805715.815), Vector2(618063.439, 5805721.421)),  # ((2349, 1359), (2208, 1494))
             (Vector2(618097.317, 5805715.819), Vector2(618088.719, 5805711.901)),  # ((2334, 654), (2439, 864))
@@ -35,6 +37,7 @@ _ROUNDABOUTS_TOPOLOGIES = {
     },
     'rdb3': {
         'roundabout_center_utm': Vector2(618136.801, 5806279.151),  # (2484, 1215),
+        'map_center_utm': Vector2(618151.801, 5806283.277),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(618121.182, 5806271.077), Vector2(618119.930, 5806275.946)),  # ((3138, 1242), (3093, 1410))
             (Vector2(618145.261, 5806261.260), Vector2(618138.078, 5806259.628)),  # ((2523, 531), (2787, 606))
@@ -44,6 +47,7 @@ _ROUNDABOUTS_TOPOLOGIES = {
     },
     'rdb4': {
         'roundabout_center_utm': Vector2(624451.746, 5809525.809),  # (1881, 954),
+        'map_center_utm': Vector2(624446.967, 5809523.881),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(624456.002, 5809501.784), Vector2(624450.510, 5809501.336)),  # ((2499, 897), (2499, 1038))
             (Vector2(624474.967, 5809530.897), Vector2(624475.470, 5809524.904)),  # ((1800, 351), (1953, 351))
@@ -53,6 +57,7 @@ _ROUNDABOUTS_TOPOLOGIES = {
     },
     'rdb5': {
         'roundabout_center_utm': Vector2(617383.221, 5806791.758),  # (2139, 1188),
+        'map_center_utm': Vector2(617381.021, 5806798.145),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(617395.259, 5806776.203), Vector2(617387.709, 5806772.706)),  # ((2844, 1281), (2739, 1563))
             (Vector2(617399.114, 5806804.625), Vector2(617402.784, 5806797.365)),  # ((2220, 453), (2499, 546))
@@ -62,6 +67,7 @@ _ROUNDABOUTS_TOPOLOGIES = {
     },
     'rdb6': {
         'roundabout_center_utm': Vector2(674606.262, 5407008.742),  # (2019, 1146),
+        'map_center_utm': Vector2(674609.071, 5407005.899),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(674584.776, 5407014.296), Vector2(674588.797, 5407022.220)),  # ((2670, 1179), (2607, 1434))
             (Vector2(674607.453, 5406986.053), Vector2(674598.449, 5406987.494)),  # ((1836, 492), (2103, 480))
@@ -71,9 +77,10 @@ _ROUNDABOUTS_TOPOLOGIES = {
     },
     'rdb7': {
         'roundabout_center_utm': Vector2(673956.833, 5410629.680),  # (1995, 1053),
+        'map_center_utm': Vector2(673954.441, 5410629.990),  # (1920, 1080),
         'roads_utm': [  # (entry_utm, exit_utm)
             (Vector2(673978.811, 5410628.785), Vector2(673976.680, 5410619.544)),  # ((2655, 747), (2730, 1053))
-            (Vector2(673949.422, 5410650.680), Vector2(673959.035, 5410651.542)),  # ((1464, 543), (1734, 372))
+            (Vector2(673949.422, 5410650.680), Vector2(673959.035, 5410651.543)),  # ((1464, 543), (1734, 372))
             (Vector2(673934.246, 5410630.581), Vector2(673937.553, 5410639.728)),  # ((1317, 1368), (1278, 1047))
             (Vector2(673963.999, 5410608.197), Vector2(673955.035, 5410607.610)),  # ((2526, 1581), (2271, 1734))
         ],
@@ -87,6 +94,7 @@ class Place(NamedTuple):
     image_path: str
     world_params: np.ndarray
     roundabout_center_utm: Vector2
+    map_center_utm: Vector2
     roads_utm: List[Tuple[Optional[Vector2], Optional[Vector2]]]
 
 

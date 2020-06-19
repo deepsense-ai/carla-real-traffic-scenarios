@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 from typing import Union, Optional, List, Tuple
 
+import more_itertools
 import numpy as np
 import scipy.spatial
 
@@ -72,7 +73,7 @@ class Chauffeur:
         return self._cmds[idx]
 
 
-MAX_DISTANCE_FROM_TRAJECTORY_M = 10
+MAX_DISTANCE_FROM_TRAJECTORY_M = 3
 
 
 class RewardCalculator:
@@ -83,11 +84,29 @@ class RewardCalculator:
 
 class DenseRewardCalculator(RewardCalculator):
 
-    def __init__(self, opendd_ego_vehicle: OpenDDVehicle, num_waypoints: int = 5) -> None:
+    def __init__(self, opendd_ego_vehicle: OpenDDVehicle, num_waypoints: int = 10) -> None:
         self._opendd_ego_vehicle = opendd_ego_vehicle
-        trajectory_length = len(opendd_ego_vehicle.trajectory_carla)
-        self._waypoint_idxes = np.linspace(0, trajectory_length, num_waypoints + 1, dtype='int')[1:]  # do not use idx=0
-        self._finish_at_idx = trajectory_length
+        trajectory_steps_length_m = [
+            t1.position.as_carla_location().distance(t2.position.as_carla_location())
+            for t1, t2 in more_itertools.windowed(opendd_ego_vehicle.trajectory_carla, 2)
+        ]
+        trajectory_length_m = sum(trajectory_steps_length_m)
+        waypoint_distances_m = trajectory_length_m / num_waypoints
+
+        cum_distance_m = 0
+        self._waypoint_idxes = []
+        for idx, step_length_m in enumerate(trajectory_steps_length_m):
+            cum_distance_m += step_length_m
+            if cum_distance_m >= waypoint_distances_m * (len(self._waypoint_idxes) + 1):
+                self._waypoint_idxes.append(idx)
+
+            # lets last checkpoint be on last trajectory waypoint
+            if len(self._waypoint_idxes) >= num_waypoints - 1:
+                self._waypoint_idxes.append(len(opendd_ego_vehicle.trajectory_carla) - 1)
+                break
+
+        self._waypoint_idxes = np.array(self._waypoint_idxes, dtype='int')
+        self._finish_at_idx = len(opendd_ego_vehicle.trajectory_carla) - 1
         self._completed_waypoints = -1
         self._reward_quant = 1 / num_waypoints
 
@@ -145,6 +164,8 @@ class OpenDDScenario(Scenario):
         self._reward_calculator: Optional[RewardCalculator] = None
         self._carla_sync: Optional[RealTrafficVehiclesInCarla] = None
 
+        self._timeout_s = None
+
     def reset(self, ego_vehicle: carla.Vehicle):
         if self._ego_vehicle_collision_sensor:
             self._ego_vehicle_collision_sensor.destroy()
@@ -176,20 +197,21 @@ class OpenDDScenario(Scenario):
         ego_vehicle.set_transform(opendd_ego_vehicle.transform_carla.as_carla_transform())
         ego_vehicle.set_velocity(opendd_ego_vehicle.velocity.as_carla_vector3d())
 
+        self._timeout_s = timestamp_start_s + (timestamp_end_s - timestamp_start_s) * 1.5
+
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
         ego_transform = ego_vehicle.get_transform()
         ego_location = ego_transform.location
 
         reward, done, early_stop = self._reward_calculator(ego_transform)
-        has_ego_collided = self._ego_vehicle_collision_sensor.has_collided
-        is_ego_offroad = self._world_map.get_waypoint(ego_location, project_to_road=False) is None
-        is_too_late_to_reach_checkpoint = False
+        ego_collided = self._ego_vehicle_collision_sensor.has_collided
+        ego_offroad = self._world_map.get_waypoint(ego_location, project_to_road=False) is None
+        timeout = self._recording.timestamp_s >= self._timeout_s | self._recording.has_finished
 
-        early_stop |= has_ego_collided | is_ego_offroad | is_too_late_to_reach_checkpoint
+        early_stop |= ego_collided | ego_offroad | timeout
         done |= early_stop
 
         reward += int(early_stop) * -1
-
         cmd = self._chauffeur.get_cmd(ego_transform)
 
         info = {
@@ -200,7 +222,6 @@ class OpenDDScenario(Scenario):
                 'dataset_mode': self._dataset_mode.name,
             },
             'reward_type': self._reward_type.name,
-            'early_stop': early_stop,
             # 'target_alignment_counter': self._target_alignment_counter,
         }
 

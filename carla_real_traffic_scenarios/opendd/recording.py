@@ -193,7 +193,7 @@ def _trim_trajectory_utm_to_entry_end_exit(place, obj_df):
     # ensure that it passes entry not more than MAX_DISTANCE_FROM_WP_M
     if min_distance_from_nearest_entry > MAX_DISTANCE_FROM_WP_M:
         trajectory_start_idx = None
-    else:
+    elif trajectory_start_idx > 0:
         # take 1st index from part of trajectory distanced not more than PRE_ENTRY_DISTANCE_M
         trajectory_start_idx = np.where(
             dm_entries[nearest_entry_idx][:trajectory_start_idx] < PRE_ENTRY_DISTANCE_M

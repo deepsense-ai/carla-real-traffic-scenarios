@@ -164,17 +164,18 @@ def _resample_df(df, target_timedelta_s):
     return df
 
 
-def _find_ego_vehicle_with_time_frame(place, session_df):
+def _find_ego_vehicle_with_time_frame(place, session_df, ego_id=None):
     all_objids = list(set(session_df.OBJID.to_list()))
+    explicit_ego_id = ego_id is not None
     while True:
-        ego_id = random.choice(all_objids)
+        ego_id = ego_id if explicit_ego_id else random.choice(all_objids)
         obj_df = session_df[session_df.OBJID == ego_id]
         start_idx, stop_idx = _trim_trajectory_utm_to_entry_end_exit(place, obj_df)
-        if start_idx is None or stop_idx is None or start_idx >= stop_idx:
+        if not explicit_ego_id and (start_idx is None or stop_idx is None or start_idx >= stop_idx):
             continue
 
-        timestamp_start_s = obj_df.iloc[start_idx].TIMESTAMP
-        timestamp_end_s = obj_df.iloc[stop_idx].TIMESTAMP
+        timestamp_start_s = obj_df.iloc[start_idx].TIMESTAMP if start_idx is not None else None
+        timestamp_end_s = obj_df.iloc[stop_idx].TIMESTAMP if stop_idx is not None else None
         return ego_id, timestamp_start_s, timestamp_end_s
 
 
@@ -330,3 +331,7 @@ class OpenDDRecording():
 
     def get_df_by_objid(self, ego_id):
         return self._df[self._df.OBJID == ego_id]
+
+    @property
+    def has_finished(self):
+        return self._frame >= len(self._timestamps) - 1

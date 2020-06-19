@@ -1,3 +1,4 @@
+import hashlib
 import random
 import sqlite3
 from typing import List, Optional
@@ -9,6 +10,7 @@ import scipy.spatial
 import skimage.transform
 
 from carla_real_traffic_scenarios import DT
+from carla_real_traffic_scenarios.ngsim import DatasetMode
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset, Place
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehicle, find_best_matching_model
 from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3, Vector2
@@ -215,10 +217,22 @@ def _trim_trajectory_utm_to_entry_end_exit(place, obj_df):
     return trajectory_start_idx, trajectory_end_idx
 
 
+def _determine_split(session_name, ego_id, start, stop) -> DatasetMode:
+    split_frac = 0.8
+    start, stop = int(round(start, 0)), int(round(stop, 0))
+    hash_num = int(hashlib.sha1(f'{session_name},{ego_id},{start},{stop}'.encode('utf-8')).hexdigest(), 16)
+    if (hash_num % 100) / 100 < split_frac:
+        return DatasetMode.TRAIN
+    else:
+        return DatasetMode.VALIDATION
+
+
 class OpenDDRecording():
 
-    def __init__(self, dataset: OpenDDDataset, timedelta_s: float = DT) -> None:
+    def __init__(self, *, dataset: OpenDDDataset, timedelta_s: float = DT,
+                 dataset_mode: DatasetMode = DatasetMode.TRAIN) -> None:
         self._dataset = dataset
+        self._dataset_mode = dataset_mode
         self._env_vehicles = {}
         self._df: Optional[pd.DataFrame] = None
         self._frame = 0
@@ -243,7 +257,12 @@ class OpenDDRecording():
                                          self._timedelta_s)
             self._df = df
 
-        ego_id, timestamp_start_s, timestamp_end_s = _find_ego_vehicle_with_time_frame(self.place, self._df)
+        # search for train/validation roundabout pass
+        dataset_mode = None
+        while dataset_mode != self._dataset_mode:
+            ego_id, timestamp_start_s, timestamp_end_s = _find_ego_vehicle_with_time_frame(self.place, self._df)
+            dataset_mode = _determine_split(session_name, ego_id, timestamp_start_s, timestamp_end_s)
+
         self._frame = np.where(np.isclose(self._timestamps, timestamp_start_s, 0.0001))[0][0] + 1
         self._env_vehicles = {}
 

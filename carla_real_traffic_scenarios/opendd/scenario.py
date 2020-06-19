@@ -3,7 +3,6 @@ import random
 from pathlib import Path
 from typing import Union, Optional, List, Tuple
 
-import more_itertools
 import numpy as np
 import scipy.spatial
 
@@ -15,7 +14,7 @@ from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
 from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
-from carla_real_traffic_scenarios.utils.transforms import Vector2, distance_between
+from carla_real_traffic_scenarios.utils.transforms import Vector2
 
 LOGGER = logging.getLogger()
 
@@ -103,10 +102,11 @@ class DenseRewardCalculator(RewardCalculator):
         completed_waypoints = np.where(self._waypoint_idxes <= idx)[0]
         current_completed_waypoint = completed_waypoints[-1] if len(completed_waypoints) else -1
         reward = self._reward_quant * max(current_completed_waypoint - self._completed_waypoints, 0)
+        early_stop = moved_away_too_far_from_trajectory
 
         self._completed_waypoints = max(current_completed_waypoint, self._completed_waypoints)
 
-        return reward, trajectory_finished or moved_away_too_far_from_trajectory
+        return reward, trajectory_finished or moved_away_too_far_from_trajectory, early_stop
 
     def _find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, float]:
         transform_carla = np.array([transform_carla.location.x, transform_carla.location.y])
@@ -122,7 +122,8 @@ class SparseRewardCalculator(DenseRewardCalculator):
         trajectory_finished = idx >= self._finish_at_idx
         moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > MAX_DISTANCE_FROM_TRAJECTORY_M
         reward = float(trajectory_finished)
-        return reward, trajectory_finished or moved_away_too_far_from_trajectory
+        early_stop = moved_away_too_far_from_trajectory
+        return reward, trajectory_finished or moved_away_too_far_from_trajectory, early_stop
 
 
 class OpenDDScenario(Scenario):
@@ -179,15 +180,18 @@ class OpenDDScenario(Scenario):
         ego_transform = ego_vehicle.get_transform()
         ego_location = ego_transform.location
 
-        reward, has_ego_finished_or_move_away_to_far = self._reward_calculator(ego_transform)
+        reward, done, early_stop = self._reward_calculator(ego_transform)
         has_ego_collided = self._ego_vehicle_collision_sensor.has_collided
         is_ego_offroad = self._world_map.get_waypoint(ego_location, project_to_road=False) is None
         is_too_late_to_reach_checkpoint = False
+
+        early_stop |= has_ego_collided | is_ego_offroad | is_too_late_to_reach_checkpoint
+        done |= early_stop
+
+        reward += int(early_stop) * -1
+
         cmd = self._chauffeur.get_cmd(ego_transform)
-        done = has_ego_collided | \
-               is_ego_offroad | \
-               has_ego_finished_or_move_away_to_far | \
-               is_too_late_to_reach_checkpoint
+
         info = {
             'opendd_dataset': {
                 'session': self._recording.session_name,
@@ -195,7 +199,8 @@ class OpenDDScenario(Scenario):
                 'objid': self._chauffeur.vehicle.id,
                 'dataset_mode': self._dataset_mode.name,
             },
-            'reward_type': self._reward_type.name
+            'reward_type': self._reward_type.name,
+            'early_stop': early_stop,
             # 'target_alignment_counter': self._target_alignment_counter,
         }
 

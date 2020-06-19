@@ -134,7 +134,7 @@ class OpenDDScenario(Scenario):
         setup_carla_settings(client, synchronous=True, time_delta_s=DT)
 
         self._dataset = OpenDDDataset(dataset_dir)
-        self._recording = OpenDDRecording(self._dataset)
+        self._recording = OpenDDRecording(dataset=self._dataset, dataset_mode=dataset_mode)
         self._dataset_mode = dataset_mode
         self._reward_type = reward_type
         self._place_name = place_name

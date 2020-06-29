@@ -206,7 +206,7 @@ class OpenDDScenario(Scenario):
         reward, done, early_stop = self._reward_calculator(ego_transform)
         ego_collided = self._ego_vehicle_collision_sensor.has_collided
         ego_offroad = self._world_map.get_waypoint(ego_location, project_to_road=False) is None
-        timeout = self._recording.timestamp_s >= self._timeout_s | self._recording.has_finished
+        timeout = (self._recording.timestamp_s >= self._timeout_s) | self._recording.has_finished
 
         early_stop |= ego_collided | ego_offroad | timeout
         done |= early_stop

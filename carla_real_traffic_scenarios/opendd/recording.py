@@ -34,9 +34,10 @@ class Utm2CarlaMapper:
         utm2pix_transform = skimage.transform.AffineTransform(pix2utm_transform._inv_matrix)
         self.utm2pix_transformer = utm2pix_transform
 
-        self.utm2carla_transformer = utm2pix_transform + \
-                                     skimage.transform.AffineTransform(translation=-image_middle) + \
-                                     skimage.transform.AffineTransform(scale=1 / np.array(utm2pix_transform.scale))
+        map_center_utm = np.array(place.map_center_utm.as_numpy()[:2])
+        reflect_matrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]], dtype='float32')  # reflect over Y axis
+        self.utm2carla_transformer = skimage.transform.AffineTransform(translation=-map_center_utm) + \
+                                     skimage.transform.AffineTransform(matrix=reflect_matrix)
 
     def utm2pix(self, transform: Transform):
         return self._transform_with_convert(transform, self.utm2pix_transformer)
@@ -66,17 +67,6 @@ class Utm2CarlaMapper:
         orientations = transformer(orientations)
         orientations = orientations - positions
         return positions, orientations
-
-
-class Utm2CarlaDirectMapper(Utm2CarlaMapper):
-
-    def __init__(self, place: Place) -> None:
-        super().__init__(place)
-
-        map_center_utm = np.array(place.map_center_utm.as_numpy()[:2])
-        reflect_matrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]], dtype='float32')  # reflect over Y axis
-        self.utm2carla_transformer = skimage.transform.AffineTransform(translation=-map_center_utm) + \
-                                     skimage.transform.AffineTransform(matrix=reflect_matrix)
 
 
 class OpenDDVehicle:
@@ -267,10 +257,7 @@ class OpenDDRecording():
         self._frame = np.where(np.isclose(self._timestamps, timestamp_start_s, 0.0001))[0][0] + 1
         self._env_vehicles = {}
 
-        if self.place.name == 'rdb7':
-            self._transformer = Utm2CarlaDirectMapper(self.place)
-        else:
-            self._transformer = Utm2CarlaMapper(self.place)
+        self._transformer = Utm2CarlaMapper(self.place)
         return ego_id, timestamp_start_s, timestamp_end_s
 
     def step(self) -> List[RealTrafficVehicle]:

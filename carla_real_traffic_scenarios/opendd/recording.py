@@ -37,7 +37,8 @@ class Utm2CarlaMapper:
         map_center_utm = np.array(place.map_center_utm.as_numpy()[:2])
         reflect_matrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]], dtype='float32')  # reflect over Y axis
         self.utm2carla_transformer = skimage.transform.AffineTransform(translation=-map_center_utm) + \
-                                     skimage.transform.AffineTransform(matrix=reflect_matrix)
+                                     skimage.transform.AffineTransform(matrix=reflect_matrix) + \
+                                     place.correction_transform
 
     def utm2pix(self, transform: Transform):
         return self._transform_with_convert(transform, self.utm2pix_transformer)

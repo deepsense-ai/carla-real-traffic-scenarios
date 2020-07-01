@@ -5,6 +5,7 @@ from typing import NamedTuple, Tuple, Dict, Union, List, Optional
 import numpy as np
 import pandas as pd
 from PIL import Image
+import skimage.transform
 
 from carla_real_traffic_scenarios.utils.transforms import Vector2
 
@@ -23,6 +24,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(619296.386, 5809130.642), Vector2(619289.733, 5809135.251)),  # ((1827, 1707), (1599, 1581))
             (Vector2(619312.708, 5809131.905), None)  # ((2346, 1614), None)
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[0.99996232, -0.02487794, -0.27454128],
+             [0.02757512, 1.00178269, 0.80360617],
+             [0., 0., 1.]]
+        ))
     },
     'rdb2': {
         'roundabout_center_utm': Vector2(618082.795, 5805733.190),  # (1896, 1023),
@@ -34,6 +40,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(618067.654, 5805750.105), Vector2(618075.653, 5805754.386)),  # ((1470, 1407), (1356, 1212))
             (Vector2(618067.654, 5805750.105), Vector2(618075.653, 5805754.386)),  # ((1470, 1407), (1356, 1212))
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[1.00012827, -0.02409896, -0.74671188],
+             [0.02559905, 1.00138109, 0.91278798],
+             [0., 0., 1.]]
+        ))
     },
     'rdb3': {
         'roundabout_center_utm': Vector2(618136.801, 5806279.151),  # (2484, 1215),
@@ -44,6 +55,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(618153.691, 5806287.755), Vector2(618155.962, 5806279.979)),  # ((1779, 1182), (1842, 909))
             (Vector2(618121.460, 5806291.793), Vector2(618127.530, 5806296.676)),  # ((2763, 1860), (2478, 1902))
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 1.]]
+        ))
     },
     'rdb4': {
         'roundabout_center_utm': Vector2(624451.746, 5809525.809),  # (1881, 954),
@@ -54,6 +70,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(624444.706, 5809549.370), Vector2(624450.081, 5809549.808)),  # ((1269, 1083), (1269, 945))
             (Vector2(624427.862, 5809521.613), Vector2(624427.398, 5809527.135)),  # ((1938, 1572), (1797, 1572))
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 1.]]
+        ))
     },
     'rdb5': {
         'roundabout_center_utm': Vector2(617383.221, 5806791.758),  # (2139, 1188),
@@ -64,6 +85,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(617371.940, 5806808.550), Vector2(617379.373, 5806811.929)),  # ((1422, 1044), (1527, 768))
             (Vector2(617368.100, 5806781.204), Vector2(617364.000, 5806788.267)),  # ((2019, 1844), (1734, 1767))
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 1.]]
+        ))
     },
     'rdb6': {
         'roundabout_center_utm': Vector2(674606.262, 5407008.742),  # (2019, 1146),
@@ -74,6 +100,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(674628.216, 5407003.400), Vector2(674623.837, 5406994.829)),  # ((1356, 1122), (1425, 846))
             (Vector2(674606.370, 5407030.237), Vector2(674615.197, 5407028.935)),  # ((2157, 1773), (1896, 1788))
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[0.99955446, -0.03083389, -0.69345472],
+             [0.03073315, 0.99923909, 0.0890304],
+             [0., 0., 1., ]]
+        ))
     },
     'rdb7': {
         'roundabout_center_utm': Vector2(673956.833, 5410629.680),  # (1995, 1053),
@@ -84,6 +115,11 @@ _ROUNDABOUTS_TOPOLOGIES = {
             (Vector2(673934.246, 5410630.581), Vector2(673937.553, 5410639.728)),  # ((1317, 1368), (1278, 1047))
             (Vector2(673963.999, 5410608.197), Vector2(673955.035, 5410607.610)),  # ((2526, 1581), (2271, 1734))
         ],
+        'correction_transform': skimage.transform.AffineTransform(np.array(
+            [[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 1.]]
+        ))
     },
 }
 
@@ -96,6 +132,7 @@ class Place(NamedTuple):
     roundabout_center_utm: Vector2
     map_center_utm: Vector2
     roads_utm: List[Tuple[Optional[Vector2], Optional[Vector2]]]
+    correction_transform: skimage.transform.ProjectiveTransform
 
 
 class OpenDDDataset:

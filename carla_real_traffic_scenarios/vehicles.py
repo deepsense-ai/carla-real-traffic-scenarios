@@ -53,7 +53,7 @@ VEHICLES = [
                              Vector3(x=2.260000, y=0.960000, z=0.943565)),
                  0.009825591929256916,
                  1.4191088867187602),
-    VehicleModel('vehicle.ford.mustang',
+    VehicleModel('vehicle.mustang.mustang',
                  2.8861885854672398, BoundingBox(Vector3(x=0.000000, y=0.000000, z=0.660000),
                                                  Vector3(x=2.340000, y=0.940000, z=0.650000)), -0.007357253693044186,
                  1.5617626953124955),

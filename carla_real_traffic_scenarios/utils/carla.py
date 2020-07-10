@@ -140,6 +140,7 @@ class CollisionSensor:
         self.has_collided = False
 
         def on_collision(e):
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ", e.other_actor, " !!!!!!!!!!!!!!!!!!!!!!!!")
             self.has_collided = True
 
         blueprint_library = world.get_blueprint_library()

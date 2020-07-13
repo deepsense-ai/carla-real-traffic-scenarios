@@ -22,6 +22,7 @@ from carla_real_traffic_scenarios.scenario import (
     ChauffeurCommand,
 )
 from carla_real_traffic_scenarios.utils import geometry
+from carla_real_traffic_scenarios.utils.carla import CollisionSensor
 
 MAX_NUM_STEPS_TO_REACH_CHECKPOINT = FPS * 10
 DEBUG = False
@@ -65,8 +66,7 @@ class RoundaboutScenario(Scenario):
         self._next_route_checkpoint_idx: Optional[int] = None
         self._steps_to_reach_next_checkpoint: Optional[int] = None
         self._command: Optional[ChauffeurCommand] = None
-        self._collision_sensor: Optional[carla.Actor] = None
-        self._collided: bool = False
+        self._collision_sensor: Optional[CollisionSensor] = None
 
         # Driving actors
         vehicle_blueprints = self._world.get_blueprint_library().filter("vehicle.*")
@@ -96,21 +96,10 @@ class RoundaboutScenario(Scenario):
         start_node = random.choice(TOWN03_ROUNDABOUT_NODES)
         start_node.spawn_point.location.z = 0.1
 
-        if self._collision_sensor is not None:
+        if self._collision_sensor:
             self._collision_sensor.destroy()
-            self._collision_sensor = None
 
-        blueprint_library = self._world.get_blueprint_library()
-        collision_sensor_bp = blueprint_library.find("sensor.other.collision")
-        self._collision_sensor = self._world.spawn_actor(
-            collision_sensor_bp, ego_vehicle.get_transform(), attach_to=ego_vehicle
-        )
-
-        def on_collision(e):
-            self._collided = True
-
-        self._collision_sensor.listen(on_collision)
-        self._collided = False
+        self._collision_sensor = CollisionSensor(self._world, ego_vehicle)
 
         # Physics trick is necessary to prevent vehicle from keeping the velocity
         ego_vehicle.set_simulate_physics(False)
@@ -186,4 +175,6 @@ class RoundaboutScenario(Scenario):
         return ScenarioStepResult(self._command, reward, done, info)
 
     def close(self):
+        if self._collision_sensor:
+            self._collision_sensor.destroy()
         self._driving_actors_manager.clean_up_all()

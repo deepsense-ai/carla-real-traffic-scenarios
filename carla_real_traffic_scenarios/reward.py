@@ -47,6 +47,7 @@ class DenseRewardCalculator(RewardCalculator):
         idx, min_distance_from_trajectory_m = self._find_nearest_trajectory_point(transform_carla)
         trajectory_finished = idx >= self._finish_at_idx
         moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > self._max_distance_trajectory_m
+        done = trajectory_finished or moved_away_too_far_from_trajectory
 
         completed_waypoints = np.where(self._waypoint_idxes <= idx)[0]
         current_completed_waypoint = completed_waypoints[-1] if len(completed_waypoints) else -1
@@ -55,7 +56,7 @@ class DenseRewardCalculator(RewardCalculator):
 
         self._completed_waypoints = max(current_completed_waypoint, self._completed_waypoints)
 
-        return reward, trajectory_finished or moved_away_too_far_from_trajectory, early_stop
+        return reward, done, early_stop
 
     def _find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, float]:
         transform_carla = np.array([transform_carla.location.x, transform_carla.location.y])

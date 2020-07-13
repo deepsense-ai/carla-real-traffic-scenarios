@@ -132,3 +132,21 @@ def setup_carla_settings(client: carla.Client, synchronous: bool, time_delta_s: 
         changed = True
     if changed:
         world.apply_settings(settings)
+
+
+class CollisionSensor:
+
+    def __init__(self, world: carla.World, carla_vehicle: carla.Vehicle):
+        self.has_collided = False
+
+        def on_collision(e):
+            self.has_collided = True
+
+        blueprint_library = world.get_blueprint_library()
+        blueprint = blueprint_library.find('sensor.other.collision')
+        self._collision_sensor = world.spawn_actor(blueprint, carla_vehicle.get_transform(), attach_to=carla_vehicle)
+        self._collision_sensor.listen(on_collision)
+
+    def destroy(self):
+        if self._collision_sensor and self._collision_sensor.is_alive:
+            self._collision_sensor.destroy()

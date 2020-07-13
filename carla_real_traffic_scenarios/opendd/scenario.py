@@ -14,27 +14,10 @@ from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
 from carla_real_traffic_scenarios.reward import RewardCalculator, DenseRewardCalculator, SparseRewardCalculator
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
-from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
+from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla, CollisionSensor
 from carla_real_traffic_scenarios.utils.transforms import Vector2
 
 LOGGER = logging.getLogger()
-
-
-class CollisionSensor:
-
-    def __init__(self, world: carla.World, carla_vehicle: carla.Vehicle):
-        self.has_collided = False
-
-        def on_collision(e):
-            self.has_collided = True
-
-        blueprint_library = world.get_blueprint_library()
-        blueprint = blueprint_library.find('sensor.other.collision')
-        self._collision_sensor = world.spawn_actor(blueprint, carla_vehicle.get_transform(), attach_to=carla_vehicle)
-        self._collision_sensor.listen(on_collision)
-
-    def destroy(self):
-        self._collision_sensor.destroy()
 
 
 class Chauffeur:

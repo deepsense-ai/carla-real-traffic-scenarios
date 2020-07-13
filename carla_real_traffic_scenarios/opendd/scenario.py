@@ -1,18 +1,18 @@
 import logging
-import random
 from pathlib import Path
+import random
 from typing import Union, Optional, List, Tuple
 
-import more_itertools
+import carla
 import numpy as np
 import scipy.spatial
 
-import carla
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import DatasetMode
 from carla_real_traffic_scenarios.opendd import RewardType
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
+from carla_real_traffic_scenarios.reward import RewardCalculator, DenseRewardCalculator, SparseRewardCalculator
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
 from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
 from carla_real_traffic_scenarios.utils.transforms import Vector2
@@ -73,78 +73,6 @@ class Chauffeur:
         return self._cmds[idx]
 
 
-MAX_DISTANCE_FROM_TRAJECTORY_M = 3
-
-
-class RewardCalculator:
-
-    def __call__(self, transform_carla: carla.Transform):
-        raise NotImplementedError()
-
-
-class DenseRewardCalculator(RewardCalculator):
-
-    def __init__(self, opendd_ego_vehicle: OpenDDVehicle, num_waypoints: int = 10) -> None:
-        self._opendd_ego_vehicle = opendd_ego_vehicle
-        trajectory_steps_length_m = [
-            t1.position.as_carla_location().distance(t2.position.as_carla_location())
-            for t1, t2 in more_itertools.windowed(opendd_ego_vehicle.trajectory_carla, 2)
-        ]
-        trajectory_length_m = sum(trajectory_steps_length_m)
-        waypoint_distances_m = trajectory_length_m / num_waypoints
-
-        cum_distance_m = 0
-        self._waypoint_idxes = []
-        for idx, step_length_m in enumerate(trajectory_steps_length_m):
-            cum_distance_m += step_length_m
-            if cum_distance_m >= waypoint_distances_m * (len(self._waypoint_idxes) + 1):
-                self._waypoint_idxes.append(idx)
-
-            # lets last checkpoint be on last trajectory waypoint
-            if len(self._waypoint_idxes) >= num_waypoints - 1:
-                self._waypoint_idxes.append(len(opendd_ego_vehicle.trajectory_carla) - 1)
-                break
-
-        self._waypoint_idxes = np.array(self._waypoint_idxes, dtype='int')
-        self._finish_at_idx = len(opendd_ego_vehicle.trajectory_carla) - 1
-        self._completed_waypoints = -1
-        self._reward_quant = 1 / num_waypoints
-
-        # for faster nearest trajectory point calculation
-        self._trajectory_carla = [t.position.as_numpy()[:2] for t in self._opendd_ego_vehicle.trajectory_carla]
-
-    def __call__(self, transform_carla: carla.Transform):
-        idx, min_distance_from_trajectory_m = self._find_nearest_trajectory_point(transform_carla)
-        trajectory_finished = idx >= self._finish_at_idx
-        moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > MAX_DISTANCE_FROM_TRAJECTORY_M
-
-        completed_waypoints = np.where(self._waypoint_idxes <= idx)[0]
-        current_completed_waypoint = completed_waypoints[-1] if len(completed_waypoints) else -1
-        reward = self._reward_quant * max(current_completed_waypoint - self._completed_waypoints, 0)
-        early_stop = moved_away_too_far_from_trajectory
-
-        self._completed_waypoints = max(current_completed_waypoint, self._completed_waypoints)
-
-        return reward, trajectory_finished or moved_away_too_far_from_trajectory, early_stop
-
-    def _find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, float]:
-        transform_carla = np.array([transform_carla.location.x, transform_carla.location.y])
-        dm = scipy.spatial.distance_matrix([transform_carla], self._trajectory_carla)
-        idx = int(np.argmin(dm, axis=1)[0])
-        return idx, dm[0][idx]
-
-
-class SparseRewardCalculator(DenseRewardCalculator):
-
-    def __call__(self, transform_carla: carla.Transform):
-        idx, min_distance_from_trajectory_m = self._find_nearest_trajectory_point(transform_carla)
-        trajectory_finished = idx >= self._finish_at_idx
-        moved_away_too_far_from_trajectory = min_distance_from_trajectory_m > MAX_DISTANCE_FROM_TRAJECTORY_M
-        reward = float(trajectory_finished)
-        early_stop = moved_away_too_far_from_trajectory
-        return reward, trajectory_finished or moved_away_too_far_from_trajectory, early_stop
-
-
 class OpenDDScenario(Scenario):
 
     def __init__(self, client: carla.Client, *, dataset_dir: Union[str, Path], reward_type: RewardType,
@@ -189,10 +117,11 @@ class OpenDDScenario(Scenario):
         opendd_ego_vehicle = self._recording._env_vehicles[ego_id]
         opendd_ego_vehicle.set_end_of_trajectory_timestamp(timestamp_end_s)
         self._chauffeur = Chauffeur(opendd_ego_vehicle, self._recording.place.roads_utm)
+        trajectory_carla = [t.as_carla_transform() for t in opendd_ego_vehicle.trajectory_carla]
         self._reward_calculator = {
             RewardType.SPARSE: SparseRewardCalculator,
             RewardType.DENSE: DenseRewardCalculator
-        }[self._reward_type](opendd_ego_vehicle)
+        }[self._reward_type](trajectory_carla)
 
         ego_vehicle.set_transform(opendd_ego_vehicle.transform_carla.as_carla_transform())
         ego_vehicle.set_velocity(opendd_ego_vehicle.velocity.as_carla_vector3d())

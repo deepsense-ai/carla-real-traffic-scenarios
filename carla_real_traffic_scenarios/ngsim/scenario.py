@@ -109,8 +109,11 @@ class NGSimLaneChangeScenario(Scenario):
         ego_transform = ego_vehicle.get_transform()
         waypoint = self._world_map.get_waypoint(ego_transform.location)
 
-        on_start_lane = waypoint.lane_id == self._start_lane_waypoint.lane_id
-        on_target_lane = waypoint.lane_id == self._target_lane_waypoint.lane_id
+        on_start_lane = False
+        on_target_lane = False
+        if waypoint:   # None if offroad
+            on_start_lane = waypoint.lane_id == self._start_lane_waypoint.lane_id
+            on_target_lane = waypoint.lane_id == self._target_lane_waypoint.lane_id
 
         not_on_expected_lanes = not (on_start_lane or on_target_lane)
         chauffeur_command = self._lane_change.chauffeur_command if on_start_lane else ChauffeurCommand.LANE_FOLLOW

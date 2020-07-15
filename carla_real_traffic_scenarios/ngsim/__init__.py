@@ -68,37 +68,18 @@ class NGSimDataset(NamedTuple):
     name: str
     data_dir: str
     carla_map: CarlaMap
-    carla_lane_by_ngsim_lane_items: Sequence  # because dict is unhashable
     rightmost_lane_id_for_lanechange_scenarios: int
     timeslots: Sequence[NGSimTimeslot]
-
-    def carla_lane_by_ngsim_lane(self, ngsim_lane: int):
-        """Dict is unhashable. Existing frozendict implementations not good enough"""
-        return dict(self.carla_lane_by_ngsim_lane_items)[ngsim_lane]
 
 
 class NGSimDatasets:
     I80 = NGSimDataset(
         "I80", "i80", CarlaMaps.I80,
-        carla_lane_by_ngsim_lane_items=tuple({
-            1: 2,
-            2: 3,
-            3: 4,
-            4: 5,
-            5: 6,
-        }.items()),
         rightmost_lane_id_for_lanechange_scenarios=5,  # 6 == powel street onramp
         timeslots=tuple(I80Timeslots.list())
     )
     US101 = NGSimDataset(
         "US101", "us101", CarlaMaps.US101,
-        carla_lane_by_ngsim_lane_items=tuple({
-            1: -2,
-            2: -3,
-            3: -4,
-            4: -5,
-            5: -6
-        }.items()),
         rightmost_lane_id_for_lanechange_scenarios=5,  # [6, 7, 8] - auxilary/ramp_on/ramp_off lanes
         timeslots=tuple(US101Timeslots.list())
     )

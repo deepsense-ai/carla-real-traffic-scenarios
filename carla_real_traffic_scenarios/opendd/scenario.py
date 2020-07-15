@@ -9,10 +9,10 @@ import scipy.spatial
 
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.ngsim import DatasetMode
-from carla_real_traffic_scenarios.opendd import RewardType
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
-from carla_real_traffic_scenarios.reward import RewardCalculator, DenseRewardCalculator, SparseRewardCalculator
+from carla_real_traffic_scenarios.reward import RewardCalculator, DenseRewardCalculator, SparseRewardCalculator, \
+    RewardType
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
 from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla, CollisionSensor
 from carla_real_traffic_scenarios.utils.transforms import Vector2

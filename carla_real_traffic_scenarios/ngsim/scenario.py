@@ -10,6 +10,7 @@ from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
+from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
@@ -29,7 +30,7 @@ class NGSimLaneChangeScenario(Scenario):
     - include bikes in CARLA to model NGSim motorcycles
     """
 
-    def __init__(self, ngsim_dataset: NGSimDataset, dataset_mode: DatasetMode, data_dir,
+    def __init__(self, ngsim_dataset: NGSimDataset, *, dataset_mode: DatasetMode, data_dir, reward_type: RewardType,
                  client: carla.Client):
         super().__init__(client)
 
@@ -58,7 +59,7 @@ class NGSimLaneChangeScenario(Scenario):
         LOGGER.info(
             f"Got {len(self._lane_change_instants)} lane change subscenarios "
             f"in {ngsim_dataset.name}_{dataset_mode.name}")
-        self._use_dense_reward = True
+        self._reward_type = reward_type
 
     def reset(self, vehicle: carla.Vehicle):
         if self._ngsim_vehicles_in_carla:
@@ -119,7 +120,7 @@ class NGSimLaneChangeScenario(Scenario):
                      (self._early_stop_monitor(ego_transform) | not_on_expected_lanes)
 
         done = scenario_finished_with_success | early_stop
-        reward = int(self._use_dense_reward) * self._get_progress_change(ego_transform)
+        reward = int(self._reward_type == RewardType.DENSE) * self._get_progress_change(ego_transform)
         reward += int(scenario_finished_with_success)
         reward += int(early_stop) * -1
 
@@ -131,6 +132,7 @@ class NGSimLaneChangeScenario(Scenario):
                 'frame': self._ngsim_recording.frame,
                 'dataset_mode': self._dataset_mode.name
             },
+            'reward_type': self._reward_type.name,
             'target_alignment_counter': self._target_alignment_counter,
         }
         return ScenarioStepResult(chauffeur_command, reward, done, info)

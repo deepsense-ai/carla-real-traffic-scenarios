@@ -1,9 +1,15 @@
+from enum import auto, Enum
 from typing import Tuple, List
 
 import carla
 import more_itertools
 import numpy as np
 import scipy.spatial
+
+
+class RewardType(Enum):
+    DENSE = auto()
+    SPARSE = auto()
 
 
 class RewardCalculator:

@@ -176,38 +176,24 @@ class NGSimLaneChangeScenario(Scenario):
             self._total_distance_m = current_location.distance(target_lane_location)
             self._checkpoints_distance_m = self._total_distance_m / checkpoints_number
 
-        def _calc_progress_change(start_waypoint, target_waypoint, current_location):
-            start_location = start_waypoint.transform.location
-            target_location = target_waypoint.transform.location
-            distance_from_start = current_location.distance(start_location)
-            distance_from_target = current_location.distance(target_location)
-
+        def _calc_progress_change(target_waypoint, current_location):
+            distance_from_target = current_location.distance(target_waypoint.transform.location)
             distance_traveled_m = self._total_distance_m - distance_from_target
             checkpoints_passed_number = int(distance_traveled_m / self._checkpoints_distance_m)
-
-            # zero if passed target centerline
-            passed_target_centerline = distance_from_start > self._total_distance_m and \
-                                       distance_from_start > distance_from_target
-            progress = int(not passed_target_centerline) * (checkpoints_passed_number / checkpoints_number)
-
+            progress = checkpoints_passed_number / checkpoints_number
             progress_change = progress - self._previous_progress
             self._previous_progress = progress
             return progress_change
 
         progress_change = 0
         if on_start_lane:
-            start_waypoint = current_waypoint
             target_waypoint = {
-                ChauffeurCommand.CHANGE_LANE_LEFT: start_waypoint.get_left_lane,
-                ChauffeurCommand.CHANGE_LANE_RIGHT: start_waypoint.get_right_lane,
+                ChauffeurCommand.CHANGE_LANE_LEFT: current_waypoint.get_left_lane,
+                ChauffeurCommand.CHANGE_LANE_RIGHT: current_waypoint.get_right_lane,
             }[self._lane_change.chauffeur_command]()
-            progress_change = _calc_progress_change(start_waypoint, target_waypoint, current_location)
+            progress_change = _calc_progress_change(target_waypoint, current_location)
         elif on_target_lane:
             target_waypoint = current_waypoint
-            start_waypoint = {
-                ChauffeurCommand.CHANGE_LANE_LEFT: target_waypoint.get_right_lane,
-                ChauffeurCommand.CHANGE_LANE_RIGHT: target_waypoint.get_left_lane,
-            }[self._lane_change.chauffeur_command]()
-            progress_change = _calc_progress_change(start_waypoint, target_waypoint, current_location)
+            progress_change = _calc_progress_change(target_waypoint, current_location)
 
         return progress_change

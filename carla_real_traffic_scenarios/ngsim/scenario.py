@@ -194,7 +194,10 @@ class NGSimLaneChangeScenario(Scenario):
                 ChauffeurCommand.CHANGE_LANE_LEFT: current_waypoint.get_left_lane,
                 ChauffeurCommand.CHANGE_LANE_RIGHT: current_waypoint.get_right_lane,
             }[self._lane_change.chauffeur_command]()
-            progress_change = _calc_progress_change(target_waypoint, current_location)
+            if target_waypoint:
+                progress_change = _calc_progress_change(target_waypoint, current_location)
+            else:
+                LOGGER.info('Have no lane to perform maneuver')
         elif on_target_lane:
             target_waypoint = current_waypoint
             progress_change = _calc_progress_change(target_waypoint, current_location)

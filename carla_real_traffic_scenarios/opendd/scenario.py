@@ -8,14 +8,16 @@ import numpy as np
 import scipy.spatial
 
 from carla_real_traffic_scenarios import DT
+from carla_real_traffic_scenarios.early_stop import EarlyStop, EarlyStopMonitor
 from carla_real_traffic_scenarios.ngsim import DatasetMode
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
 from carla_real_traffic_scenarios.reward import RewardCalculator, DenseRewardCalculator, SparseRewardCalculator, \
     RewardType
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
-from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla, CollisionSensor
+from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
 from carla_real_traffic_scenarios.utils.transforms import Vector2
+from sim2real.runner import DONE_CAUSE_KEY
 
 LOGGER = logging.getLogger()
 
@@ -71,27 +73,29 @@ class OpenDDScenario(Scenario):
         self._place_name = place_name
 
         self._chauffeur: Optional[Chauffeur] = None
-        self._ego_vehicle_collision_sensor: Optional[CollisionSensor] = None
+        self._early_stop_monitor: Optional[EarlyStopMonitor] = None
         self._reward_calculator: Optional[RewardCalculator] = None
         self._carla_sync: Optional[RealTrafficVehiclesInCarla] = None
 
         self._timeout_s = None
 
     def reset(self, ego_vehicle: carla.Vehicle):
-        if self._ego_vehicle_collision_sensor:
-            self._ego_vehicle_collision_sensor.destroy()
-            self._ego_vehicle_collision_sensor = None
-        self._ego_vehicle_collision_sensor = CollisionSensor(self._world, ego_vehicle)
-
         if self._carla_sync:
             self._carla_sync.close()
         self._carla_sync = RealTrafficVehiclesInCarla(self._client, self._world)
+
+        if self._early_stop_monitor:
+            self._early_stop_monitor.close()
 
         session_names = self._dataset.session_names
         if self._place_name:
             session_names = [n for n in session_names if self._place_name.lower() in n]
         session_name = random.choice(session_names)
         ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name)
+
+        timeout_s = (timestamp_end_s - timestamp_start_s) * 1.5
+        timeout_s = min(timeout_s, self._recording._timestamps[-1] - timestamp_start_s)
+        self._early_stop_monitor = EarlyStopMonitor(ego_vehicle, timeout_s=timeout_s)
 
         env_vehicles = self._recording.step()
         other_vehicles = [v for v in env_vehicles if v.id != ego_id]
@@ -113,20 +117,25 @@ class OpenDDScenario(Scenario):
 
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
         ego_transform = ego_vehicle.get_transform()
-        ego_location = ego_transform.location
 
-        reward, done, early_stop = self._reward_calculator(ego_transform)
-        ego_collided = self._ego_vehicle_collision_sensor.has_collided
-        ego_offroad = self._world_map.get_waypoint(ego_location, project_to_road=False) is None
-        timeout = (self._recording.timestamp_s >= self._timeout_s) | self._recording.has_finished
-        trajectory_finished = done and not early_stop
+        early_stop = EarlyStop.NONE
+        reward, done, early_stop_ = self._reward_calculator(ego_transform)
+        scenario_finished_with_success = done and not early_stop_
+        if not scenario_finished_with_success:
+            early_stop = self._early_stop_monitor(ego_transform)
+            if early_stop_:
+                early_stop |= EarlyStop.MOVED_TOO_FAR
 
-        early_stop |= ego_collided | ego_offroad | timeout
-        done |= early_stop
+        done = scenario_finished_with_success | bool(early_stop)
+        reward += int(bool(early_stop)) * -1
+        reward += int(scenario_finished_with_success)
 
-        reward += int(early_stop) * -1
-        reward += int(trajectory_finished)
         cmd = self._chauffeur.get_cmd(ego_transform)
+        done_info = {}
+        if done and scenario_finished_with_success:
+            done_info[DONE_CAUSE_KEY] = 'success'
+        elif done and early_stop:
+            done_info[DONE_CAUSE_KEY] = early_stop.decomposed_name('_').lower()
 
         info = {
             'opendd_dataset': {
@@ -136,7 +145,7 @@ class OpenDDScenario(Scenario):
                 'dataset_mode': self._dataset_mode.name,
             },
             'reward_type': self._reward_type.name,
-            # 'target_alignment_counter': self._target_alignment_counter,
+            **done_info
         }
 
         env_vehicles = self._recording.step()
@@ -146,9 +155,9 @@ class OpenDDScenario(Scenario):
         return ScenarioStepResult(cmd, reward, done, info)
 
     def close(self):
-        if self._ego_vehicle_collision_sensor:
-            self._ego_vehicle_collision_sensor.destroy()
-            self._ego_vehicle_collision_sensor = None
+        if self._early_stop_monitor:
+            self._early_stop_monitor.close()
+            self._early_stop_monitor = None
 
         if self._carla_sync:
             self._carla_sync.close()

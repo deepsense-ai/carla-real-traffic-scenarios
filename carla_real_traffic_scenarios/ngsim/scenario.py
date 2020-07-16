@@ -16,6 +16,7 @@ from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla,
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
 from carla_real_traffic_scenarios.utils.geometry import normalize_angle
 from carla_real_traffic_scenarios.utils.transforms import distance_between_on_plane
+from sim2real.runner import DONE_CAUSE_KEY
 
 CROSSTRACK_ERROR_TOLERANCE = 0.3
 YAW_DEG_ERRORS_TOLERANCE = 10
@@ -111,7 +112,7 @@ class NGSimLaneChangeScenario(Scenario):
 
         on_start_lane = False
         on_target_lane = False
-        if waypoint:   # None if offroad
+        if waypoint:
             on_start_lane = waypoint.lane_id == self._start_lane_waypoint.lane_id
             on_target_lane = waypoint.lane_id == self._target_lane_waypoint.lane_id
 
@@ -131,6 +132,11 @@ class NGSimLaneChangeScenario(Scenario):
         reward += int(bool(early_stop)) * -1
 
         self._previous_chauffeur_command = chauffeur_command
+        done_info = {}
+        if done and scenario_finished_with_success:
+            done_info[DONE_CAUSE_KEY] = 'success'
+        elif done and early_stop:
+            done_info[DONE_CAUSE_KEY] = early_stop.decomposed_name('_').lower()
         info = {
             'ngsim_dataset': {
                 'road': self._ngsim_dataset.name,
@@ -140,6 +146,7 @@ class NGSimLaneChangeScenario(Scenario):
             },
             'reward_type': self._reward_type.name,
             'target_alignment_counter': self._target_alignment_counter,
+            **done_info
         }
         return ScenarioStepResult(chauffeur_command, reward, done, info)
 

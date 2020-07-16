@@ -7,7 +7,7 @@ import carla
 import numpy as np
 
 from carla_real_traffic_scenarios import DT
-from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor
+from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor, EarlyStop
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
 from carla_real_traffic_scenarios.reward import RewardType
@@ -119,13 +119,16 @@ class NGSimLaneChangeScenario(Scenario):
         chauffeur_command = self._lane_change.chauffeur_command if on_start_lane else ChauffeurCommand.LANE_FOLLOW
         scenario_finished_with_success = on_target_lane & self._is_lane_aligned(ego_transform, waypoint)
 
-        early_stop = not scenario_finished_with_success and \
-                     (self._early_stop_monitor(ego_transform) | not_on_expected_lanes)
+        early_stop = EarlyStop.NONE
+        if not scenario_finished_with_success:
+            early_stop = self._early_stop_monitor(ego_transform)
+            if not_on_expected_lanes:
+                early_stop |= EarlyStop.MOVED_TOO_FAR
 
-        done = scenario_finished_with_success | early_stop
+        done = scenario_finished_with_success | bool(early_stop)
         reward = int(self._reward_type == RewardType.DENSE) * self._get_progress_change(ego_transform)
         reward += int(scenario_finished_with_success)
-        reward += int(early_stop) * -1
+        reward += int(bool(early_stop)) * -1
 
         self._previous_chauffeur_command = chauffeur_command
         info = {

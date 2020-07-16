@@ -67,7 +67,12 @@ class EarlyStopMonitor:
     def _check_offroad(self, ego_transform):
         offroad = EarlyStop.NONE
         if self._world_map.get_waypoint(ego_transform.location, project_to_road=False) is None:
-            offroad |= EarlyStop.OFFROAD
+            waypoint = self._world_map.get_waypoint(ego_transform.location)
+            distance_to_lane = waypoint.transform.location.distance(ego_transform.location)
+            # if distance to nearest lane ceneter not exceeds 30% of half of lane width
+            probably_is_on_lane = (waypoint.lane_width / 2) * 1.3 > distance_to_lane
+            if not probably_is_on_lane:
+                offroad |= EarlyStop.OFFROAD
             LOGGER.debug(f'Vehicle off-road')
         return offroad
 

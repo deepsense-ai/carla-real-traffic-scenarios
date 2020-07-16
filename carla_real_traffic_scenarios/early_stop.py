@@ -12,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 
 class EarlyStop(IntFlag):
     NONE = 0
-    MOVED_TO_FAR = auto()
+    MOVED_TOO_FAR = auto()
     TIMEOUT = auto()
     OFFROAD = auto()
     COLLISION = auto()
@@ -52,7 +52,7 @@ class EarlyStopMonitor:
             *_, distance_m = self._trajectory.find_nearest_trajectory_point(ego_transform)
             move_away = distance_m > self._max_trajectory_distance_m  # moved_away
             if move_away:
-                move_away |= EarlyStop.MOVED_TO_FAR
+                move_away |= EarlyStop.MOVED_TOO_FAR
                 LOGGER.debug(f'Vehicle moved too far: {distance_m:0.3f}m/{self._max_trajectory_distance_m:0.3f}m')
         return move_away
 

@@ -73,7 +73,20 @@ class NGSimLaneChangeScenario(Scenario):
         timeout_s = (FRAMES_BEFORE_MANUVEUR + FRAMES_AFTER_MANUVEUR) * DT
         self._early_stop_monitor = EarlyStopMonitor(vehicle, timeout_s=timeout_s)
 
-        self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
+        while True:
+            self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
+            frame_manuveur_start = max(self._lane_change.frame_start - FRAMES_BEFORE_MANUVEUR, 0)
+            self._ngsim_recording.reset(timeslot=self._lane_change.timeslot, frame=frame_manuveur_start - 1)
+            ngsim_vehicles = self._ngsim_recording.step()
+            agent_ngsim_vehicle = find_first_matching(ngsim_vehicles, lambda v: v.id == self._lane_change.vehicle_id)
+            t = agent_ngsim_vehicle.transform
+            self._start_lane_waypoint = self._world_map.get_waypoint(t.as_carla_transform().location)
+            self._target_lane_waypoint = {
+                ChauffeurCommand.CHANGE_LANE_LEFT: self._start_lane_waypoint.get_left_lane,
+                ChauffeurCommand.CHANGE_LANE_RIGHT: self._start_lane_waypoint.get_right_lane,
+            }[self._lane_change.chauffeur_command]()
+            if self._start_lane_waypoint and self._target_lane_waypoint:
+                break
 
         self._target_alignment_counter = 0
         self._previous_chauffeur_command = self._lane_change.chauffeur_command
@@ -81,24 +94,11 @@ class NGSimLaneChangeScenario(Scenario):
         self._total_distance_m = None
         self._checkpoints_distance_m = None
 
-        frame_manuveur_start = max(self._lane_change.frame_start - FRAMES_BEFORE_MANUVEUR, 0)
-        self._ngsim_recording.reset(timeslot=self._lane_change.timeslot, frame=frame_manuveur_start - 1)
-        ngsim_vehicles = self._ngsim_recording.step()
-
-        agent_ngsim_vehicle = find_first_matching(ngsim_vehicles, lambda v: v.id == self._lane_change.vehicle_id)
-        other_ngsim_vehicles = [v for v in ngsim_vehicles if v.id != self._lane_change.vehicle_id]
-
-        t = agent_ngsim_vehicle.transform
         vehicle.set_transform(t.as_carla_transform())
         v = t.orientation * agent_ngsim_vehicle.speed * PIXELS_TO_METERS
         vehicle.set_velocity(v.to_vector3(0).as_carla_vector3d())  # meters per second,
 
-        self._start_lane_waypoint = self._world_map.get_waypoint(t.as_carla_transform().location)
-        self._target_lane_waypoint = {
-            ChauffeurCommand.CHANGE_LANE_LEFT: self._start_lane_waypoint.get_left_lane,
-            ChauffeurCommand.CHANGE_LANE_RIGHT: self._start_lane_waypoint.get_right_lane,
-        }[self._lane_change.chauffeur_command]()
-
+        other_ngsim_vehicles = [v for v in ngsim_vehicles if v.id != self._lane_change.vehicle_id]
         self._ngsim_vehicles_in_carla.step(other_ngsim_vehicles)
 
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:

@@ -8,7 +8,8 @@ import numpy as np
 
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor, EarlyStop
-from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
+from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode, \
+    NGSimDatasets
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
 from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
@@ -86,8 +87,16 @@ class NGSimLaneChangeScenario(Scenario):
                 ChauffeurCommand.CHANGE_LANE_LEFT: self._start_lane_waypoint.get_left_lane,
                 ChauffeurCommand.CHANGE_LANE_RIGHT: self._start_lane_waypoint.get_right_lane,
             }[self._lane_change.chauffeur_command]()
+
             if self._start_lane_waypoint and self._target_lane_waypoint:
-                break
+                def _get_id(wp):
+                    return (wp.road_id, wp.section_id, wp.lane_id)
+
+                waypoints = [self._start_lane_waypoint, self._target_lane_waypoint]
+
+                # black-list I80.(10,0,1) lane
+                if self._ngsim_dataset != NGSimDatasets.I80 and (10, 0, 1) not in [_get_id(wp) for wp in waypoints]:
+                    break
 
         self._target_alignment_counter = 0
         self._previous_chauffeur_command = self._lane_change.chauffeur_command

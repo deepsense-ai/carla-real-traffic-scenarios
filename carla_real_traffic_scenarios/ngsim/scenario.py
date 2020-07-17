@@ -86,7 +86,7 @@ class NGSimLaneChangeScenario(Scenario):
                 ChauffeurCommand.CHANGE_LANE_LEFT: self._start_lane_waypoint.get_left_lane,
                 ChauffeurCommand.CHANGE_LANE_RIGHT: self._start_lane_waypoint.get_right_lane,
             }[self._lane_change.chauffeur_command]()
-            if self._start_lane_waypoint and self._target_lane_waypoint:
+            if self._start_lane_waypoint and self._target_lane_waypoint and not self._start_lane_waypoint.is_junction:
                 break
 
         self._target_alignment_counter = 0
@@ -94,6 +94,7 @@ class NGSimLaneChangeScenario(Scenario):
         self._previous_progress = 0
         self._total_distance_m = None
         self._checkpoints_distance_m = None
+        self._junction_lane_offset = None
 
         vehicle.set_transform(t.as_carla_transform())
         v = t.orientation * agent_ngsim_vehicle.speed * PIXELS_TO_METERS
@@ -112,9 +113,30 @@ class NGSimLaneChangeScenario(Scenario):
 
         on_start_lane = False
         on_target_lane = False
+
+        def _get_lane_offset_on_junction(junction, lane_id):
+            junction_waypoints = junction.get_waypoints(carla.LaneType.Driving)
+            waypoints_pair = [
+                (w_start, w_end) for w_start, w_end in junction_waypoints
+                if w_start.previous(5)[0].lane_id == lane_id
+            ][0]
+            # ensure that lane_id before and after junction is the same
+            assert waypoints_pair[1].next(5)[0].lane_id == lane_id
+            return waypoints_pair[0].lane_id - lane_id
+
+
         if waypoint:
-            on_start_lane = waypoint.lane_id == self._start_lane_waypoint.lane_id
-            on_target_lane = waypoint.lane_id == self._target_lane_waypoint.lane_id
+            if self._junction_lane_offset is None and waypoint.is_junction:
+                junction = waypoint.get_junction()
+                start_lane_offset = _get_lane_offset_on_junction(junction, self._start_lane_waypoint.lane_id)
+                target_lane_offset = _get_lane_offset_on_junction(junction, self._target_lane_waypoint.lane_id)
+                assert start_lane_offset == target_lane_offset
+                self._junction_lane_offset = start_lane_offset
+
+            lane_offset = int(waypoint.is_junction) * (self._junction_lane_offset or 0)
+
+            on_start_lane = waypoint.lane_id == self._start_lane_waypoint.lane_id + lane_offset
+            on_target_lane = waypoint.lane_id == self._target_lane_waypoint.lane_id + lane_offset
 
         not_on_expected_lanes = not (on_start_lane or on_target_lane)
         chauffeur_command = self._lane_change.chauffeur_command if on_start_lane else ChauffeurCommand.LANE_FOLLOW

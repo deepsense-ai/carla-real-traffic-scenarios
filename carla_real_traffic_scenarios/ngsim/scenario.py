@@ -1,3 +1,5 @@
+from queue import Queue
+
 import hashlib
 import logging
 import random
@@ -8,8 +10,7 @@ import numpy as np
 
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor, EarlyStop
-from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode, \
-    NGSimDatasets
+from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
 from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
@@ -24,6 +25,40 @@ YAW_DEG_ERRORS_TOLERANCE = 10
 TARGET_LANE_ALIGNMENT_FRAMES = 10
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _unroll_waypoint(wp, max_distance, step, backward=True):
+    ref_wp = wp
+    q = Queue()
+    q.put(wp)
+    waypoints = [wp]
+    while not q.empty():
+        wp = q.get()
+        tmp = wp.previous(step) if backward else wp.next(step)
+        for w in tmp:
+            if w.transform.location.distance(ref_wp.transform.location) < max_distance:
+                q.put(w)
+        waypoints.extend(tmp)
+    return waypoints
+
+
+def _extract_wp_id(wp):
+    return (wp.road_id, wp.section_id, wp.lane_id)
+
+
+def _wp2str(wp, ref=None):
+    d = wp.transform.location.distance(ref.transform.location) if ref else 0
+    return f'id={_extract_wp_id(wp)} junct={wp.is_junction} ' \
+           f'loc=({wp.transform.location.x:0.2f},{wp.transform.location.y:0.2f}) ' \
+           f'yaw={wp.transform.rotation.yaw:0.2f}rad ' \
+           f'd={d:0.2f}'
+
+
+def _get_lane_ids(lane_wp):
+    return sorted(set(
+        [_extract_wp_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2)] + \
+        [_extract_wp_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2, backward=False)]
+    ))
 
 
 class NGSimLaneChangeScenario(Scenario):
@@ -89,25 +124,16 @@ class NGSimLaneChangeScenario(Scenario):
             }[self._lane_change.chauffeur_command]()
 
             if self._start_lane_waypoint and self._target_lane_waypoint:
-                def _get_id(wp):
-                    return (wp.road_id, wp.section_id, wp.lane_id)
-
-                waypoints = [self._start_lane_waypoint, self._target_lane_waypoint]
-
-                # black-list I80.(10,0,1) lane
-                if self._ngsim_dataset != NGSimDatasets.I80 and (10, 0, 1) not in [_get_id(wp) for wp in waypoints]:
-                    break
+                self._start_lane_ids = _get_lane_ids(self._start_lane_waypoint)
+                self._target_lane_ids = _get_lane_ids(self._target_lane_waypoint)
+                assert not (set(self._start_lane_ids) & set(self._target_lane_ids))  # ensure disjoint sets of ids
+                break
 
         self._target_alignment_counter = 0
         self._previous_chauffeur_command = self._lane_change.chauffeur_command
         self._previous_progress = 0
         self._total_distance_m = None
         self._checkpoints_distance_m = None
-        self._junction_start_lane_offsets = None
-        self._junction_target_lane_offsets = None
-        self._start_lane_offset = 0
-        self._target_lane_offset = 0
-        self._ego_on_junction = self._start_lane_waypoint.is_junction
 
         vehicle.set_transform(t.as_carla_transform())
         v = t.orientation * agent_ngsim_vehicle.speed * PIXELS_TO_METERS
@@ -127,105 +153,10 @@ class NGSimLaneChangeScenario(Scenario):
         on_start_lane = False
         on_target_lane = False
 
-        def _unroll_waypoint(wp, n, step, backward=True):
-            waypoints = []
-            for i in range(n):
-                tmp = wp.previous(step) if backward else wp.next(step)
-                assert len(tmp) <= 1
-                if not tmp:
-                    break
-                wp = tmp[0]
-                waypoints.append(wp)
-            return waypoints
-
-        def _wp2str(wp, ref=None):
-            d = wp.transform.location.distance(ref.transform.location) if ref else 0
-            return f'id={wp.road_id}.{wp.section_id}.{wp.lane_id} junct={wp.is_junction} ' \
-                   f'loc=({wp.transform.location.x:0.2f},{wp.transform.location.y:0.2f}) d={d:0.2f}'
-
-        def _dump_junction(dataset_name, junction_waypoint_pairs, waypoint):
-            print(dataset_name, _wp2str(waypoint))
-            print('backward')
-            for idx, (wp_start, wp_end) in enumerate(junction_waypoint_pairs):
-                print('-----')
-                print(f'start{idx}', _wp2str(wp_start, waypoint))
-                for wp in _unroll_waypoint(wp_start, 50, 2):
-                    print(_wp2str(wp, waypoint))
-            print('forward')
-            for idx, (wp_start, wp_end) in enumerate(junction_waypoint_pairs):
-                print('-----')
-                print(f'end{idx}', _wp2str(wp_end, waypoint))
-                for wp in _unroll_waypoint(wp_end, 50, 2, backward=False):
-                    print(_wp2str(wp, waypoint))
-
-
-        def _get_lane_offset_on_junction(junction, waypoint):
-            junction_waypoint_pairs = junction.get_waypoints(carla.LaneType.Driving)
-
-            def _is_matching(start_junction_waypoint, ref_waypoint):
-                if ref_waypoint.junction_id == junction.id:
-                    waypoints = [start_junction_waypoint]
-                else:
-                    waypoints = _unroll_waypoint(start_junction_waypoint, 50, 2)
-                    # sometimes there is loop in junction having route to our waypoint - we want to avoid such waypoints
-                    if waypoints and waypoints[0].is_junction:
-                        waypoints = []
-                    # ensure that lane_id doesn't change
-                    assert all([waypoints[0].lane_id == wp.lane_id for wp in waypoints]), [wp.lane_id for wp in waypoints]
-                return any([w.road_id == ref_waypoint.road_id and
-                            w.section_id == ref_waypoint.section_id and \
-                            w.lane_id == ref_waypoint.lane_id for w in waypoints])
-
-            waypoint_pairs = [
-                (w_start, w_end) for w_start, w_end in junction_waypoint_pairs
-                if _is_matching(w_start, waypoint)
-            ]
-
-            if not waypoint_pairs:
-                _dump_junction(self._ngsim_dataset.name, junction_waypoint_pairs, waypoint)
-                assert waypoint_pairs
-
-            entry_offsets = [
-                entry_waypoint.lane_id - entry_waypoint.previous(5)[0].lane_id
-                for entry_waypoint, exit_waypoint in waypoint_pairs
-            ]
-            exit_offsets = [
-                exit_waypoint.next(5)[0].lane_id - exit_waypoint.lane_id
-                for entry_waypoint, exit_waypoint in waypoint_pairs
-            ]
-
-            if not all([entry_offsets[0] == o for o in entry_offsets]):
-                _dump_junction(self._ngsim_dataset.name, junction_waypoint_pairs, waypoint)
-                print(entry_offsets)
-                assert all([entry_offsets[0] == o for o in entry_offsets])
-
-            if not all([exit_offsets[0] == o for o in exit_offsets]):
-                _dump_junction(self._ngsim_dataset.name, junction_waypoint_pairs, waypoint)
-                print(exit_offsets)
-                assert all([exit_offsets[0] == o for o in exit_offsets])
-
-            return entry_offsets[0] if entry_offsets else 0, exit_offsets[0] if exit_offsets else 0
-
         if waypoint:
-            if self._junction_start_lane_offsets is None and waypoint.is_junction:
-                junction = waypoint.get_junction()
-                # get entry and exit offsets
-                self._junction_start_lane_offsets = \
-                    _get_lane_offset_on_junction(junction, self._start_lane_waypoint)
-                self._junction_target_lane_offsets = \
-                    _get_lane_offset_on_junction(junction, self._target_lane_waypoint)
-
-            junction_change = int(waypoint.is_junction) - int(self._ego_on_junction)
-            self._ego_on_junction = waypoint.is_junction
-
-            def _get_offset_change(junction_change, offsets):
-                return {-1: offsets[1], 0: 0, 1: offsets[0]}[junction_change] if offsets else 0
-
-            self._start_lane_offset += _get_offset_change(junction_change, self._junction_start_lane_offsets)
-            self._target_lane_offset += _get_offset_change(junction_change, self._junction_target_lane_offsets)
-
-            on_start_lane = waypoint.lane_id == self._start_lane_waypoint.lane_id + self._start_lane_offset
-            on_target_lane = waypoint.lane_id == self._target_lane_waypoint.lane_id + self._target_lane_offset
+            waypoint_id = _extract_wp_id(waypoint)
+            on_start_lane = waypoint_id in self._start_lane_ids
+            on_target_lane = waypoint_id in self._target_lane_ids
 
         not_on_expected_lanes = not (on_start_lane or on_target_lane)
         chauffeur_command = self._lane_change.chauffeur_command if on_start_lane else ChauffeurCommand.LANE_FOLLOW
@@ -301,8 +232,9 @@ class NGSimLaneChangeScenario(Scenario):
 
         current_location = ego_transform.location
         current_waypoint = self._world_map.get_waypoint(current_location)
-        on_start_lane = current_waypoint.lane_id == self._start_lane_waypoint.lane_id + self._start_lane_offset
-        on_target_lane = current_waypoint.lane_id == self._target_lane_waypoint.lane_id + self._target_lane_offset
+        waypoint_id = _extract_wp_id(current_waypoint)
+        on_start_lane = waypoint_id in self._start_lane_ids
+        on_target_lane = waypoint_id in self._target_lane_ids
 
         checkpoints_number = 10
         if self._total_distance_m is None:

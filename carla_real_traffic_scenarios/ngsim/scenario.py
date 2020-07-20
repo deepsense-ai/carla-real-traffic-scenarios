@@ -183,7 +183,7 @@ class NGSimLaneChangeScenario(Scenario):
         if done and scenario_finished_with_success:
             done_info[DONE_CAUSE_KEY] = 'success'
         elif done and early_stop:
-            done_info[DONE_CAUSE_KEY] = early_stop.decomposed_name('_').lower()
+            done_info[DONE_CAUSE_KEY] = EarlyStop(early_stop).decomposed_name('_').lower()
         info = {
             'ngsim_dataset': {
                 'road': self._ngsim_dataset.name,

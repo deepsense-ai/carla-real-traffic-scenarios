@@ -5,7 +5,6 @@ import carla
 import more_itertools
 import numpy as np
 import scipy.spatial
-from functools import lru_cache
 
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.geometry import normalize_angle
@@ -15,7 +14,6 @@ from carla_real_traffic_scenarios.utils.transforms import distance_between_on_pl
 LOGGER = logging.getLogger(__name__)
 
 
-@lru_cache()
 def _get_nearest_location(locations_carla: np.ndarray, location_ego: np.ndarray):
     dm = scipy.spatial.distance_matrix([location_ego], locations_carla)
     idx = int(np.argmin(dm, axis=1)[0])
@@ -31,22 +29,22 @@ class Trajectory:
         self._segments_length_m = [
             t1.location.distance(t2.location) for t1, t2 in more_itertools.windowed(trajectory_carla, 2)
         ]
-        self._length_m = sum(self._segments_length_m)
+
+        self._s = np.cumsum(np.pad(self._segments_length_m, 1, mode='constant'))
+        last_idx = len(trajectory_carla) - 1
+        self._length_m = self._s[last_idx]
 
     def find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, carla.Transform, float]:
-        location_ego = np.round([transform_carla.location.x, transform_carla.location.y], decimals=1)
+        location_ego = np.round([transform_carla.location.x, transform_carla.location.y], decimals=2)
         idx, distance_from_trajectory = _get_nearest_location(self._locations_carla, location_ego)
-        return idx, self._trajectory_carla[idx], distance_from_trajectory
 
-    def get_distance_from_start(self, transform_carla: carla.Transform):
-        idx, *_, distance_from_trajectory = self.find_nearest_trajectory_point(transform_carla)
+        s_idx = min(idx, len(self._s) - 1)
+        return self._s[s_idx], self._trajectory_carla[idx], distance_from_trajectory
 
     @property
     def total_length_m(self):
         return self._length_m
 
-    def __call__(self, transform_carla: carla.Transform) -> Tuple[bool, float]:
-        pass
 
 CROSSTRACK_ERROR_TOLERANCE = 0.3
 YAW_DEG_ERRORS_TOLERANCE = 10

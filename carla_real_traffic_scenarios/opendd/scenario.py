@@ -12,14 +12,20 @@ from carla_real_traffic_scenarios.early_stop import EarlyStop, EarlyStopMonitor
 from carla_real_traffic_scenarios.ngsim import DatasetMode
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
 from carla_real_traffic_scenarios.opendd.recording import OpenDDVehicle, OpenDDRecording
-from carla_real_traffic_scenarios.reward import RewardCalculator, DenseRewardCalculator, SparseRewardCalculator, \
-    RewardType
+from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, ChauffeurCommand
+from carla_real_traffic_scenarios.trajectory import Trajectory
 from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
 from carla_real_traffic_scenarios.utils.transforms import Vector2
 from sim2real.runner import DONE_CAUSE_KEY
 
 LOGGER = logging.getLogger()
+MAX_DISTANCE_FROM_REF_TRAJECTORY_M = 3
+NUM_CHECKPOINTS = 10
+
+
+def _quantify_progress(progress, num_checkpoints=NUM_CHECKPOINTS):
+    return np.floor(progress * num_checkpoints) / num_checkpoints
 
 
 class Chauffeur:
@@ -74,10 +80,8 @@ class OpenDDScenario(Scenario):
 
         self._chauffeur: Optional[Chauffeur] = None
         self._early_stop_monitor: Optional[EarlyStopMonitor] = None
-        self._reward_calculator: Optional[RewardCalculator] = None
         self._carla_sync: Optional[RealTrafficVehiclesInCarla] = None
-
-        self._timeout_s = None
+        self._current_progress = 0
 
     def reset(self, ego_vehicle: carla.Vehicle):
         if self._carla_sync:
@@ -93,10 +97,6 @@ class OpenDDScenario(Scenario):
         session_name = random.choice(session_names)
         ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name)
 
-        timeout_s = (timestamp_end_s - timestamp_start_s) * 1.5
-        timeout_s = min(timeout_s, self._recording._timestamps[-1] - timestamp_start_s)
-        self._early_stop_monitor = EarlyStopMonitor(ego_vehicle, timeout_s=timeout_s)
-
         env_vehicles = self._recording.step()
         other_vehicles = [v for v in env_vehicles if v.id != ego_id]
         self._carla_sync.step(other_vehicles)
@@ -104,33 +104,35 @@ class OpenDDScenario(Scenario):
         opendd_ego_vehicle = self._recording._env_vehicles[ego_id]
         opendd_ego_vehicle.set_end_of_trajectory_timestamp(timestamp_end_s)
         self._chauffeur = Chauffeur(opendd_ego_vehicle, self._recording.place.roads_utm)
-        trajectory_carla = [t.as_carla_transform() for t in opendd_ego_vehicle.trajectory_carla]
-        self._reward_calculator = {
-            RewardType.SPARSE: SparseRewardCalculator,
-            RewardType.DENSE: DenseRewardCalculator
-        }[self._reward_type](trajectory_carla)
 
         ego_vehicle.set_transform(opendd_ego_vehicle.transform_carla.as_carla_transform())
         ego_vehicle.set_velocity(opendd_ego_vehicle.velocity.as_carla_vector3d())
 
-        self._timeout_s = timestamp_start_s + (timestamp_end_s - timestamp_start_s) * 1.5
+        self._current_progress = 0
+        trajectory_carla = [t.as_carla_transform() for t in opendd_ego_vehicle.trajectory_carla]
+        self._trajectory = Trajectory(trajectory_carla=trajectory_carla)
+        timeout_s = (timestamp_end_s - timestamp_start_s) * 1.5
+        timeout_s = min(timeout_s, self._recording._timestamps[-1] - timestamp_start_s)
+        self._early_stop_monitor = EarlyStopMonitor(ego_vehicle, timeout_s=timeout_s, trajectory=self._trajectory,
+                                                    max_trajectory_distance_m=MAX_DISTANCE_FROM_REF_TRAJECTORY_M)
 
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
         ego_transform = ego_vehicle.get_transform()
 
+        progress = self._get_progress(ego_transform)
+        progress_change = max(0, _quantify_progress(progress) - _quantify_progress(self._current_progress))
+        self._current_progress = progress
+
+        scenario_finished_with_success = progress >= 1.0
         early_stop = EarlyStop.NONE
-        reward, done, early_stop_ = self._reward_calculator(ego_transform)
-        scenario_finished_with_success = done and not early_stop_
         if not scenario_finished_with_success:
             early_stop = self._early_stop_monitor(ego_transform)
-            if early_stop_:
-                early_stop |= EarlyStop.MOVED_TOO_FAR
             if self._recording.has_finished:
                 early_stop |= EarlyStop.TIMEOUT
-
         done = scenario_finished_with_success | bool(early_stop)
-        reward += int(bool(early_stop)) * -1
+        reward = int(self._reward_type == RewardType.DENSE) * progress_change
         reward += int(scenario_finished_with_success)
+        reward += int(bool(early_stop)) * -1
 
         cmd = self._chauffeur.get_cmd(ego_transform)
         done_info = {}
@@ -168,3 +170,7 @@ class OpenDDScenario(Scenario):
             self._recording.close()
             del self._recording
             self._recording = None
+
+    def _get_progress(self, ego_transform: carla.Transform):
+        s, *_ = self._trajectory.find_nearest_trajectory_point(ego_transform)
+        return s / self._trajectory.total_length_m

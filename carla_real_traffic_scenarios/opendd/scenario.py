@@ -125,6 +125,8 @@ class OpenDDScenario(Scenario):
             early_stop = self._early_stop_monitor(ego_transform)
             if early_stop_:
                 early_stop |= EarlyStop.MOVED_TOO_FAR
+            if self._recording.has_finished:
+                early_stop |= EarlyStop.TIMEOUT
 
         done = scenario_finished_with_success | bool(early_stop)
         reward += int(bool(early_stop)) * -1

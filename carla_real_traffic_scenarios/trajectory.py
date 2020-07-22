@@ -1,3 +1,4 @@
+import logging
 from typing import List, Tuple
 
 import carla
@@ -6,8 +7,12 @@ import numpy as np
 import scipy.spatial
 from functools import lru_cache
 
+from carla_real_traffic_scenarios.scenario import ChauffeurCommand
 from carla_real_traffic_scenarios.utils.geometry import normalize_angle
+from carla_real_traffic_scenarios.utils.topology import get_lane_id
 from carla_real_traffic_scenarios.utils.transforms import distance_between_on_plane
+
+LOGGER = logging.getLogger(__name__)
 
 
 @lru_cache()
@@ -82,3 +87,60 @@ class LaneAlignmentMonitor:
             'alignment_errors': alignment_errors,
             'target_alignment_counter': self._lane_alignment_counter
         }
+
+
+class LaneChangeProgressMonitor:
+
+    def __init__(self, world_map: carla.Map, *,
+                 start_lane_ids: List[Tuple[int, int, int]], target_lane_ids: List[Tuple[int, int, int]],
+                 lane_change_command: ChauffeurCommand, checkpoints_number: int = 10):
+        self._world_map = world_map
+        self._start_lane_ids = start_lane_ids
+        self._target_lane_ids = target_lane_ids
+        self._lane_change_command = lane_change_command
+        self._checkpoints_number = checkpoints_number
+
+        self._total_distance_m = None
+        self._checkpoints_distance_m = None
+        self._previous_progress = 0
+
+    def get_progress_change(self, ego_transform: carla.Transform):
+        current_location = ego_transform.location
+        current_waypoint = self._world_map.get_waypoint(current_location)
+        lane_id = get_lane_id(current_waypoint)
+        on_start_lane = lane_id in self._start_lane_ids
+        on_target_lane = lane_id in self._target_lane_ids
+
+        # on init calculate "lane width"
+        if self._total_distance_m is None:
+            target_waypoint = self._get_target_lane_waypoint(current_waypoint)
+            self._total_distance_m = current_location.distance(target_waypoint.transform.location)
+            self._checkpoints_distance_m = self._total_distance_m / self._checkpoints_number
+
+        progress_change = 0
+        if on_start_lane:
+            target_waypoint = self._get_target_lane_waypoint(current_waypoint)
+            if target_waypoint:
+                progress_change = self._calc_progress_change(target_waypoint, current_location)
+            else:
+                LOGGER.info('Have no lane to perform maneuver')
+        elif on_target_lane:
+            target_waypoint = current_waypoint
+            progress_change = self._calc_progress_change(target_waypoint, current_location)
+
+        return progress_change
+
+    def _get_target_lane_waypoint(self, current_waypoint):
+        return {
+            ChauffeurCommand.CHANGE_LANE_LEFT: current_waypoint.get_left_lane,
+            ChauffeurCommand.CHANGE_LANE_RIGHT: current_waypoint.get_right_lane,
+        }[self._lane_change_command]()
+
+    def _calc_progress_change(self, target_waypoint, current_location):
+        distance_from_target = current_location.distance(target_waypoint.transform.location)
+        distance_traveled_m = self._total_distance_m - distance_from_target
+        checkpoints_passed_number = int(distance_traveled_m / self._checkpoints_distance_m)
+        progress = checkpoints_passed_number / self._checkpoints_number
+        progress_change = progress - self._previous_progress
+        self._previous_progress = progress
+        return progress_change

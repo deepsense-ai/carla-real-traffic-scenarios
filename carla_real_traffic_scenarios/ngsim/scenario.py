@@ -14,7 +14,7 @@ from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, L
 from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
 from carla_real_traffic_scenarios.trajectory import LaneAlignmentMonitor, TARGET_LANE_ALIGNMENT_FRAMES, \
-    CROSSTRACK_ERROR_TOLERANCE, YAW_DEG_ERRORS_TOLERANCE
+    CROSSTRACK_ERROR_TOLERANCE, YAW_DEG_ERRORS_TOLERANCE, LaneChangeProgressMonitor
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
 from carla_real_traffic_scenarios.utils.topology import get_lane_id
@@ -73,6 +73,7 @@ class NGSimLaneChangeScenario(Scenario):
         self._ngsim_vehicles_in_carla = None
         self._dataset_mode = dataset_mode
         self._early_stop_monitor: Optional[EarlyStopMonitor] = None
+        self._progress_monitor: Optional[LaneChangeProgressMonitor] = None
         self._lane_alignment_monitor = LaneAlignmentMonitor(lane_alignment_frames=TARGET_LANE_ALIGNMENT_FRAMES,
                                                             cross_track_error_tolerance=CROSSTRACK_ERROR_TOLERANCE,
                                                             yaw_deg_error_tolerance=YAW_DEG_ERRORS_TOLERANCE)
@@ -126,9 +127,10 @@ class NGSimLaneChangeScenario(Scenario):
                 break
 
         self._lane_alignment_monitor.reset()
-        self._previous_progress = 0
-        self._total_distance_m = None
-        self._checkpoints_distance_m = None
+        self._progress_monitor = LaneChangeProgressMonitor(self._world_map,
+                                                           start_lane_ids=self._start_lane_ids,
+                                                           target_lane_ids=self._target_lane_ids,
+                                                           lane_change_command=self._lane_change.chauffeur_command)
 
         vehicle.set_transform(t.as_carla_transform())
         v = t.orientation * agent_ngsim_vehicle.speed * PIXELS_TO_METERS
@@ -166,7 +168,7 @@ class NGSimLaneChangeScenario(Scenario):
                 early_stop |= EarlyStop.MOVED_TOO_FAR
 
         done = scenario_finished_with_success | bool(early_stop)
-        reward = int(self._reward_type == RewardType.DENSE) * self._get_progress_change(ego_transform)
+        reward = int(self._reward_type == RewardType.DENSE) * self._progress_monitor.get_progress_change(ego_transform)
         reward += int(scenario_finished_with_success)
         reward += int(bool(early_stop)) * -1
 
@@ -205,42 +207,3 @@ class NGSimLaneChangeScenario(Scenario):
 
         del self._ngsim_recording
         self._ngsim_recording = None
-
-    def _get_progress_change(self, ego_transform: carla.Transform):
-
-        current_location = ego_transform.location
-        current_waypoint = self._world_map.get_waypoint(current_location)
-        lane_id = get_lane_id(current_waypoint)
-        on_start_lane = lane_id in self._start_lane_ids
-        on_target_lane = lane_id in self._target_lane_ids
-
-        checkpoints_number = 10
-        if self._total_distance_m is None:
-            target_lane_location = self._target_lane_waypoint.transform.location
-            self._total_distance_m = current_location.distance(target_lane_location)
-            self._checkpoints_distance_m = self._total_distance_m / checkpoints_number
-
-        def _calc_progress_change(target_waypoint, current_location):
-            distance_from_target = current_location.distance(target_waypoint.transform.location)
-            distance_traveled_m = self._total_distance_m - distance_from_target
-            checkpoints_passed_number = int(distance_traveled_m / self._checkpoints_distance_m)
-            progress = checkpoints_passed_number / checkpoints_number
-            progress_change = progress - self._previous_progress
-            self._previous_progress = progress
-            return progress_change
-
-        progress_change = 0
-        if on_start_lane:
-            target_waypoint = {
-                ChauffeurCommand.CHANGE_LANE_LEFT: current_waypoint.get_left_lane,
-                ChauffeurCommand.CHANGE_LANE_RIGHT: current_waypoint.get_right_lane,
-            }[self._lane_change.chauffeur_command]()
-            if target_waypoint:
-                progress_change = _calc_progress_change(target_waypoint, current_location)
-            else:
-                LOGGER.info('Have no lane to perform maneuver')
-        elif on_target_lane:
-            target_waypoint = current_waypoint
-            progress_change = _calc_progress_change(target_waypoint, current_location)
-
-        return progress_change

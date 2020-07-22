@@ -1,5 +1,3 @@
-from queue import Queue
-
 import hashlib
 import logging
 import random
@@ -17,26 +15,11 @@ from carla_real_traffic_scenarios.trajectory import LaneAlignmentMonitor, TARGET
     CROSSTRACK_ERROR_TOLERANCE, YAW_DEG_ERRORS_TOLERANCE, LaneChangeProgressMonitor
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
-from carla_real_traffic_scenarios.utils.topology import get_lane_id
+from carla_real_traffic_scenarios.utils.topology import get_lane_id, get_lane_ids
 from sim2real.runner import DONE_CAUSE_KEY
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-def _unroll_waypoint(wp, max_distance, step, backward=True):
-    ref_wp = wp
-    q = Queue()
-    q.put(wp)
-    waypoints = [wp]
-    while not q.empty():
-        wp = q.get()
-        tmp = wp.previous(step) if backward else wp.next(step)
-        for w in tmp:
-            if w.transform.location.distance(ref_wp.transform.location) < max_distance:
-                q.put(w)
-        waypoints.extend(tmp)
-    return waypoints
 
 
 def _wp2str(wp, ref=None):
@@ -45,13 +28,6 @@ def _wp2str(wp, ref=None):
            f'loc=({wp.transform.location.x:0.2f},{wp.transform.location.y:0.2f}) ' \
            f'yaw={wp.transform.rotation.yaw:0.2f}rad ' \
            f'd={d:0.2f}'
-
-
-def _get_lane_ids(lane_wp):
-    return sorted(set(
-        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2)] + \
-        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2, backward=False)]
-    ))
 
 
 class NGSimLaneChangeScenario(Scenario):
@@ -121,8 +97,8 @@ class NGSimLaneChangeScenario(Scenario):
             }[self._lane_change.chauffeur_command]()
 
             if self._start_lane_waypoint and self._target_lane_waypoint:
-                self._start_lane_ids = _get_lane_ids(self._start_lane_waypoint)
-                self._target_lane_ids = _get_lane_ids(self._target_lane_waypoint)
+                self._start_lane_ids = get_lane_ids(self._start_lane_waypoint)
+                self._target_lane_ids = get_lane_ids(self._target_lane_waypoint)
                 assert not (set(self._start_lane_ids) & set(self._target_lane_ids))  # ensure disjoint sets of ids
                 break
 

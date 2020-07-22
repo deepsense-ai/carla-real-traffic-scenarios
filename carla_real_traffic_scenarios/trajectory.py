@@ -72,7 +72,7 @@ class LaneAlignmentMonitor:
         cross_track_error = distance_between_on_plane(ego_transform.location, lane_transform.location)
         yaw_rad_error = normalize_angle(np.deg2rad(ego_transform.rotation.yaw - lane_transform.rotation.yaw))
         aligned_with_target_lane = cross_track_error < self._cross_track_error_tolerance and \
-                                   yaw_rad_error < self._yaw_rad_error_tolerance
+                                   np.abs(yaw_rad_error) < self._yaw_rad_error_tolerance
         if aligned_with_target_lane:
             self._lane_alignment_counter += 1
         else:

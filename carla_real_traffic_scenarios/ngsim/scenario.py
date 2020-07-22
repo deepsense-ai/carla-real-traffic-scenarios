@@ -127,7 +127,6 @@ class NGSimLaneChangeScenario(Scenario):
                 break
 
         self._target_alignment_counter = 0
-        self._previous_chauffeur_command = self._lane_change.chauffeur_command
         self._previous_progress = 0
         self._total_distance_m = None
         self._checkpoints_distance_m = None
@@ -175,7 +174,6 @@ class NGSimLaneChangeScenario(Scenario):
         reward += int(scenario_finished_with_success)
         reward += int(bool(early_stop)) * -1
 
-        self._previous_chauffeur_command = chauffeur_command
         done_info = {}
         if done and scenario_finished_with_success:
             done_info[DONE_CAUSE_KEY] = 'success'

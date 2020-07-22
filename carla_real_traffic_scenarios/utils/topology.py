@@ -7,12 +7,13 @@
 This module provides implementation for GlobalRoutePlannerDAO
 """
 import logging
+from queue import Queue
 from typing import List
 
+import carla
 import networkx as nx
 import numpy as np
 
-import carla
 from carla_real_traffic_scenarios.utils.transforms import Vector3
 
 LOGGER = logging.getLogger(__name__)
@@ -238,3 +239,25 @@ class Topology:
             return results
 
         return _unroll(start_waypoint, min_length_m)
+
+
+def _unroll_waypoint(wp, max_distance, step, backward=True):
+    ref_wp = wp
+    q = Queue()
+    q.put(wp)
+    waypoints = [wp]
+    while not q.empty():
+        wp = q.get()
+        tmp = wp.previous(step) if backward else wp.next(step)
+        for w in tmp:
+            if w.transform.location.distance(ref_wp.transform.location) < max_distance:
+                q.put(w)
+        waypoints.extend(tmp)
+    return waypoints
+
+
+def get_lane_ids(lane_wp, max_distance=300, step=2):
+    return sorted(set(
+        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, max_distance, step)] + \
+        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, max_distance, step, backward=False)]
+    ))

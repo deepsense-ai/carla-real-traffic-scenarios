@@ -17,6 +17,7 @@ from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, 
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
 from carla_real_traffic_scenarios.utils.geometry import normalize_angle
+from carla_real_traffic_scenarios.utils.topology import get_lane_id
 from carla_real_traffic_scenarios.utils.transforms import distance_between_on_plane
 from sim2real.runner import DONE_CAUSE_KEY
 
@@ -42,13 +43,9 @@ def _unroll_waypoint(wp, max_distance, step, backward=True):
     return waypoints
 
 
-def _extract_wp_id(wp):
-    return (wp.road_id, wp.section_id, wp.lane_id)
-
-
 def _wp2str(wp, ref=None):
     d = wp.transform.location.distance(ref.transform.location) if ref else 0
-    return f'id={_extract_wp_id(wp)} junct={wp.is_junction} ' \
+    return f'id={get_lane_id(wp)} junct={wp.is_junction} ' \
            f'loc=({wp.transform.location.x:0.2f},{wp.transform.location.y:0.2f}) ' \
            f'yaw={wp.transform.rotation.yaw:0.2f}rad ' \
            f'd={d:0.2f}'
@@ -56,8 +53,8 @@ def _wp2str(wp, ref=None):
 
 def _get_lane_ids(lane_wp):
     return sorted(set(
-        [_extract_wp_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2)] + \
-        [_extract_wp_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2, backward=False)]
+        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2)] + \
+        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, 300, 2, backward=False)]
     ))
 
 
@@ -154,9 +151,9 @@ class NGSimLaneChangeScenario(Scenario):
         on_target_lane = False
 
         if waypoint:
-            waypoint_id = _extract_wp_id(waypoint)
-            on_start_lane = waypoint_id in self._start_lane_ids
-            on_target_lane = waypoint_id in self._target_lane_ids
+            lane_id = get_lane_id(waypoint)
+            on_start_lane = lane_id in self._start_lane_ids
+            on_target_lane = lane_id in self._target_lane_ids
 
         not_on_expected_lanes = not (on_start_lane or on_target_lane)
         chauffeur_command = self._lane_change.chauffeur_command if on_start_lane else ChauffeurCommand.LANE_FOLLOW
@@ -232,9 +229,9 @@ class NGSimLaneChangeScenario(Scenario):
 
         current_location = ego_transform.location
         current_waypoint = self._world_map.get_waypoint(current_location)
-        waypoint_id = _extract_wp_id(current_waypoint)
-        on_start_lane = waypoint_id in self._start_lane_ids
-        on_target_lane = waypoint_id in self._target_lane_ids
+        lane_id = get_lane_id(current_waypoint)
+        on_start_lane = lane_id in self._start_lane_ids
+        on_target_lane = lane_id in self._target_lane_ids
 
         checkpoints_number = 10
         if self._total_distance_m is None:

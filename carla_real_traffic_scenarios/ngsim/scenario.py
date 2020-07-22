@@ -6,7 +6,6 @@ import random
 from typing import Optional
 
 import carla
-import numpy as np
 
 from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor, EarlyStop
@@ -14,16 +13,13 @@ from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AF
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
 from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import ScenarioStepResult, Scenario, ChauffeurCommand
+from carla_real_traffic_scenarios.trajectory import LaneAlignmentMonitor, TARGET_LANE_ALIGNMENT_FRAMES, \
+    CROSSTRACK_ERROR_TOLERANCE, YAW_DEG_ERRORS_TOLERANCE
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
-from carla_real_traffic_scenarios.utils.geometry import normalize_angle
 from carla_real_traffic_scenarios.utils.topology import get_lane_id
-from carla_real_traffic_scenarios.utils.transforms import distance_between_on_plane
 from sim2real.runner import DONE_CAUSE_KEY
 
-CROSSTRACK_ERROR_TOLERANCE = 0.3
-YAW_DEG_ERRORS_TOLERANCE = 10
-TARGET_LANE_ALIGNMENT_FRAMES = 10
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,9 +71,11 @@ class NGSimLaneChangeScenario(Scenario):
         )
         self._ngsim_dataset = ngsim_dataset
         self._ngsim_vehicles_in_carla = None
-        self._target_alignment_counter: int
         self._dataset_mode = dataset_mode
         self._early_stop_monitor: Optional[EarlyStopMonitor] = None
+        self._lane_alignment_monitor = LaneAlignmentMonitor(lane_alignment_frames=TARGET_LANE_ALIGNMENT_FRAMES,
+                                                            cross_track_error_tolerance=CROSSTRACK_ERROR_TOLERANCE,
+                                                            yaw_deg_error_tolerance=YAW_DEG_ERRORS_TOLERANCE)
 
         def determine_split(lane_change_instant: LaneChangeInstant) -> DatasetMode:
             split_frac = 0.8
@@ -94,6 +92,7 @@ class NGSimLaneChangeScenario(Scenario):
             f"Got {len(self._lane_change_instants)} lane change subscenarios "
             f"in {ngsim_dataset.name}_{dataset_mode.name}")
         self._reward_type = reward_type
+
 
     def reset(self, vehicle: carla.Vehicle):
         if self._ngsim_vehicles_in_carla:
@@ -126,7 +125,7 @@ class NGSimLaneChangeScenario(Scenario):
                 assert not (set(self._start_lane_ids) & set(self._target_lane_ids))  # ensure disjoint sets of ids
                 break
 
-        self._target_alignment_counter = 0
+        self._lane_alignment_monitor.reset()
         self._previous_progress = 0
         self._total_distance_m = None
         self._checkpoints_distance_m = None
@@ -157,11 +156,8 @@ class NGSimLaneChangeScenario(Scenario):
         not_on_expected_lanes = not (on_start_lane or on_target_lane)
         chauffeur_command = self._lane_change.chauffeur_command if on_start_lane else ChauffeurCommand.LANE_FOLLOW
 
-        scenario_finished_with_success = False
-        alignment_errors = None
-        if on_target_lane:
-            aligned, alignment_errors = self._is_lane_aligned(ego_transform, waypoint)
-            scenario_finished_with_success |= aligned
+        scenario_finished_with_success = on_target_lane and \
+                                         self._lane_alignment_monitor.is_lane_aligned(ego_transform, waypoint.transform)
 
         early_stop = EarlyStop.NONE
         if not scenario_finished_with_success:
@@ -190,23 +186,10 @@ class NGSimLaneChangeScenario(Scenario):
             'on_start_lane': on_start_lane,
             'on_target_lane': on_target_lane,
             'is_junction': waypoint.is_junction if waypoint else False,
-            'alignment_errors': alignment_errors,
-            'target_alignment_counter': self._target_alignment_counter,
+            **self._lane_alignment_monitor.info(),
             **done_info
         }
         return ScenarioStepResult(chauffeur_command, reward, done, info)
-
-    def _is_lane_aligned(self, ego_transform, waypoint):
-        crosstrack_error = distance_between_on_plane(ego_transform.location, waypoint.transform.location)
-        yaw_error = normalize_angle(np.deg2rad(ego_transform.rotation.yaw - waypoint.transform.rotation.yaw))
-        aligned_with_target_lane = crosstrack_error < CROSSTRACK_ERROR_TOLERANCE and \
-                                   yaw_error < np.deg2rad(YAW_DEG_ERRORS_TOLERANCE)
-        if aligned_with_target_lane:
-            self._target_alignment_counter += 1
-        else:
-            self._target_alignment_counter = 0
-        return self._target_alignment_counter == TARGET_LANE_ALIGNMENT_FRAMES, \
-               str(f'track={crosstrack_error:0.2f}m yaw={yaw_error:0.2f}rad')
 
     def close(self):
         if self._early_stop_monitor:

@@ -1,21 +1,27 @@
 import logging
-from typing import List
+from typing import List, Optional
 
+import carla
 import numpy as np
 import random
 from more_itertools import windowed, unique_justseen
 
-import carla
+from carla_real_traffic_scenarios import DT
 from carla_real_traffic_scenarios.artificial_lane_change.controller import TeleportCommandsController
+from carla_real_traffic_scenarios.early_stop import EarlyStop, EarlyStopMonitor
+from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import ChauffeurCommand, Scenario, ScenarioStepResult
-from carla_real_traffic_scenarios.utils.topology import get_lane_id, Topology
-from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3, Vector2, distance_between_on_plane
+from carla_real_traffic_scenarios.trajectory import LaneAlignmentMonitor, LaneChangeProgressMonitor, \
+    TARGET_LANE_ALIGNMENT_FRAMES, CROSSTRACK_ERROR_TOLERANCE, YAW_DEG_ERRORS_TOLERANCE
+from carla_real_traffic_scenarios.utils.topology import get_lane_id, Topology, get_lane_ids
+from carla_real_traffic_scenarios.utils.transforms import Transform, Vector3, Vector2
+from sim2real.runner import DONE_CAUSE_KEY
 
 LOGGER = logging.getLogger(__name__)
 
-TARGET_LANE_ALIGNMENT_FRAMES = 10
-CROSSTRACK_ERROR_TOLERANCE = 0.3
-YAW_DEG_ERRORS_TOLERANCE = 10
+FRAMES_BEFORE_MANUVEUR = 50
+FRAMES_AFTER_MANUVEUR = 50
+
 VEHICLE_SLOT_LENGTH_M = 8
 MAX_VEHICLE_RANDOM_SPACE_M = 20
 MAX_MANEUVER_LENGTH_M = 200
@@ -66,12 +72,18 @@ def _is_behind_ego_or_inside_birdview(c, ego_vehicle_location):
 class ArtificialLaneChangeScenario(Scenario):
 
     def __init__(self, *, client: carla.Client, cmd_for_changing_lane=ChauffeurCommand.CHANGE_LANE_LEFT,
-                 speed_range_token: str, no_columns=True):
+                 speed_range_token: str, no_columns=True, reward_type: RewardType = RewardType.DENSE):
         super().__init__(client=client)
         start_point = Transform(Vector3(-144.4, -22.41, 0), Vector2(-1.0, 0.0))
         self._find_lane_waypoints(cmd_for_changing_lane, start_point.position.as_carla_location())
         self._cmd_for_changing_lane = cmd_for_changing_lane
-        self._done_counter: int = TARGET_LANE_ALIGNMENT_FRAMES
+        self._reward_type = reward_type
+
+        self._progress_monitor: Optional[LaneChangeProgressMonitor] = None
+        self._lane_alignment_monitor = LaneAlignmentMonitor(lane_alignment_frames=TARGET_LANE_ALIGNMENT_FRAMES,
+                                                            cross_track_error_tolerance=CROSSTRACK_ERROR_TOLERANCE,
+                                                            yaw_deg_error_tolerance=YAW_DEG_ERRORS_TOLERANCE)
+        self._early_stop_monitor: Optional[EarlyStopMonitor] = None
 
         # vehicles shall fill bird view + first vehicle shall reach end of route forward part
         # till the last one reaches bottom of the bird view; assume just VEHICLE_SLOT_LENGTH_M spacing
@@ -110,6 +122,11 @@ class ArtificialLaneChangeScenario(Scenario):
         }[cmd_for_changing_lane]()
         if self._target_lane_waypoint is None:
             raise RuntimeError(f'Could not find {cmd_for_changing_lane} lane for {start_location} location')
+
+        self._start_lane_ids = get_lane_ids(self._start_lane_waypoint, max_distances=(300, 10))
+        self._target_lane_ids = get_lane_ids(self._target_lane_waypoint, max_distances=(300, 10))
+        common_lanes = set(self._start_lane_ids) & set(self._target_lane_ids)
+        assert not (common_lanes)  # ensure disjoint sets of ids
 
     def _spawn_env_vehicles(self, n: int):
         blueprints = self._world.get_blueprint_library().filter('vehicle.*')
@@ -151,7 +168,12 @@ class ArtificialLaneChangeScenario(Scenario):
         }
 
     def reset(self, ego_vehicle: carla.Vehicle):
-        self._done_counter = TARGET_LANE_ALIGNMENT_FRAMES
+        if self._early_stop_monitor:
+            self._early_stop_monitor.close()
+
+        timeout_s = (FRAMES_BEFORE_MANUVEUR + FRAMES_AFTER_MANUVEUR) * DT
+        self._early_stop_monitor = EarlyStopMonitor(ego_vehicle, timeout_s=timeout_s)
+
         self._route = random.choice(self._routes)
 
         min_speed, max_speed = self._speed_range_mps
@@ -165,47 +187,59 @@ class ArtificialLaneChangeScenario(Scenario):
         if cmds:
             self._client.apply_batch_sync(cmds, do_tick=False)
 
+        self._lane_alignment_monitor.reset()
+        self._progress_monitor = LaneChangeProgressMonitor(self._world_map,
+                                                           start_lane_ids=self._start_lane_ids,
+                                                           target_lane_ids=self._target_lane_ids,
+                                                           lane_change_command=self._cmd_for_changing_lane)
+
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
-        ego_vehicle_transform = ego_vehicle.get_transform()
-        self._move_env_vehicles(ego_vehicle_transform.location)
+        ego_transform = ego_vehicle.get_transform()
+        self._move_env_vehicles(ego_transform.location)
 
-        ego_vehicle_transform = Transform.from_carla_transform(ego_vehicle_transform)
-        current_lane_waypoint = self._world_map.get_waypoint(ego_vehicle_transform.position.as_carla_location())
-        current_lane = get_lane_id(current_lane_waypoint)
+        waypoint = self._world_map.get_waypoint(ego_transform.location)
 
-        # TODO: in fact there are many different lanes which are allowed to go
-        allowed_lanes = list(map(get_lane_id, [self._start_lane_waypoint, self._target_lane_waypoint]))
+        on_start_lane = False
+        on_target_lane = False
 
-        on_target_lane = current_lane == get_lane_id(self._target_lane_waypoint)
-        offroad = current_lane not in allowed_lanes
+        if waypoint:
+            lane_id = get_lane_id(waypoint)
+            on_start_lane = lane_id in self._start_lane_ids
+            on_target_lane = lane_id in self._target_lane_ids
+
+        not_on_expected_lanes = not (on_start_lane or on_target_lane)
+        chauffeur_command = self._cmd_for_changing_lane if on_start_lane else ChauffeurCommand.LANE_FOLLOW
+
+        scenario_finished_with_success = on_target_lane and \
+                                         self._lane_alignment_monitor.is_lane_aligned(ego_transform, waypoint.transform)
+
+        early_stop = EarlyStop.NONE
+        if not scenario_finished_with_success:
+            early_stop = self._early_stop_monitor(ego_transform)
+            if not_on_expected_lanes:
+                early_stop |= EarlyStop.MOVED_TOO_FAR
+
+        done = scenario_finished_with_success | bool(early_stop)
+        reward = int(self._reward_type == RewardType.DENSE) * self._progress_monitor.get_progress_change(ego_transform)
+        reward += int(scenario_finished_with_success)
+        reward += int(bool(early_stop)) * -1
+
+        done_info = {}
+        if done and scenario_finished_with_success:
+            done_info[DONE_CAUSE_KEY] = 'success'
+        elif done and early_stop:
+            done_info[DONE_CAUSE_KEY] = EarlyStop(early_stop).decomposed_name('_').lower()
 
         info = {
-            "target_lane_aligmnent_counter": self._done_counter
+            'reward_type': self._reward_type.name,
+            'on_start_lane': on_start_lane,
+            'on_target_lane': on_target_lane,
+            'is_junction': waypoint.is_junction if waypoint else False,
+            **self._lane_alignment_monitor.info(),
+            **done_info
         }
 
-        chauffeur_cmd = self._cmd_for_changing_lane
-        done = offroad
-        if on_target_lane:  # not finished yet
-            current_lane_transform = Transform.from_carla_transform(current_lane_waypoint.transform)
-
-            crosstrack_error, yaw_error = self._calculate_errors(current_lane_transform, ego_vehicle_transform)
-            aligned_with_target_lane = crosstrack_error < CROSSTRACK_ERROR_TOLERANCE and \
-                                       yaw_error < np.deg2rad(YAW_DEG_ERRORS_TOLERANCE)
-            if aligned_with_target_lane:
-                self._done_counter -= 1
-            else:
-                self._done_counter = TARGET_LANE_ALIGNMENT_FRAMES
-
-            chauffeur_cmd = ChauffeurCommand.LANE_FOLLOW
-            done = self._done_counter == 0
-
-        reward = int(done and not offroad)
-        return ScenarioStepResult(chauffeur_cmd, reward, done, info)
-
-    def _calculate_errors(self, current_lane_transform, ego_vehicle_transform):
-        crosstrack_error = distance_between_on_plane(ego_vehicle_transform, current_lane_transform)
-        yaw_error = abs(ego_vehicle_transform.orientation.yaw_radians - current_lane_transform.orientation.yaw_radians)
-        return crosstrack_error, yaw_error
+        return ScenarioStepResult(chauffeur_command, reward, done, info)
 
     def _setup_controllers(self, ego_vehicle_location, speed_mps, route, column_ahead_of_ego_m):
         resolution_m = np.median([t1.location.distance(t2.location) for t1, t2 in windowed(route, 2)])
@@ -260,3 +294,8 @@ class ArtificialLaneChangeScenario(Scenario):
                 cmds.extend(controller.reset(initial_location=column_end_location))
         if cmds:
             self._client.apply_batch_sync(cmds, do_tick=False)
+
+    def close(self):
+        if self._early_stop_monitor:
+            self._early_stop_monitor.close()
+            self._early_stop_monitor = None

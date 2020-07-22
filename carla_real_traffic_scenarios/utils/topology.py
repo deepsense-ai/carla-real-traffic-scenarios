@@ -256,8 +256,8 @@ def _unroll_waypoint(wp, max_distance, step, backward=True):
     return waypoints
 
 
-def get_lane_ids(lane_wp, max_distance=300, step=2):
-    return sorted(set(
-        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, max_distance, step)] + \
-        [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, max_distance, step, backward=False)]
-    ))
+def get_lane_ids(lane_wp, max_distances=(300, 300), step=2):
+    forward_distance, back_distance = max_distances
+    back = [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, back_distance, step)]
+    forward = [get_lane_id(wp) for wp in _unroll_waypoint(lane_wp, forward_distance, step, backward=False)]
+    return sorted(set(back + forward))

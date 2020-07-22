@@ -189,7 +189,7 @@ class NGSimLaneChangeScenario(Scenario):
             'reward_type': self._reward_type.name,
             'on_start_lane': on_start_lane,
             'on_target_lane': on_target_lane,
-            'is_junction': waypoint.is_junction,
+            'is_junction': waypoint.is_junction if waypoint else False,
             'alignment_errors': alignment_errors,
             'target_alignment_counter': self._target_alignment_counter,
             **done_info

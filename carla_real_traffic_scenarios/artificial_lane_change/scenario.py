@@ -183,7 +183,12 @@ class ArtificialLaneChangeScenario(Scenario):
         column_ahead_of_ego_m = np.random.randint(*self._env_vehicle_column_ahead_range_m)
         cmds = self._setup_controllers(self._start_lane_waypoint.transform.location, speed_mps,
                                        self._route, column_ahead_of_ego_m)
+
+        ego_speed_mps = min_speed + np.random.random() * range_size
+        t = Transform.from_carla_transform(self._start_lane_waypoint.transform)
+        velocity = (t.orientation * ego_speed_mps).to_vector3(0).as_carla_vector3d()
         cmds.append(carla.command.ApplyTransform(ego_vehicle.id, transform=self._start_lane_waypoint.transform))
+        cmds.append(carla.command.ApplyVelocity(ego_vehicle.id, velocity))
         if cmds:
             self._client.apply_batch_sync(cmds, do_tick=False)
 

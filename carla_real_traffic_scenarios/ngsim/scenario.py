@@ -126,9 +126,15 @@ class NGSimLaneChangeScenario(Scenario):
 
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
         ngsim_vehicles = self._ngsim_recording.step()
-        other_ngsim_vehicles = [v for v in ngsim_vehicles if v.id != self._lane_change.vehicle_id]
-        self._ngsim_vehicles_in_carla.step(other_ngsim_vehicles)
+        other_ngsim_vehicles = []
+        original_veh_transform = None
+        for veh in ngsim_vehicles:
+            if veh.id == self._lane_change.vehicle_id:
+                original_veh_transform = veh.transform.as_carla_transform()
+            else:
+                other_ngsim_vehicles.append(veh)
 
+        self._ngsim_vehicles_in_carla.step(other_ngsim_vehicles)
         ego_transform = ego_vehicle.get_transform()
         waypoint = self._world_map.get_waypoint(ego_transform.location)
 
@@ -168,6 +174,11 @@ class NGSimLaneChangeScenario(Scenario):
                 'timeslice': self._lane_change.timeslot.file_suffix,
                 'frame': self._ngsim_recording.frame,
                 'dataset_mode': self._dataset_mode.name,
+            },
+            'scenario_data': {
+                'ego_veh': ego_vehicle,
+                'original_veh_transform': original_veh_transform,
+                'original_to_ego_distance': original_veh_transform.location.distance(ego_transform.location)
             },
             'reward_type': self._reward_type.name,
             'on_start_lane': on_start_lane,

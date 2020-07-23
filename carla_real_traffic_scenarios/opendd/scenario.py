@@ -65,9 +65,15 @@ class Chauffeur:
 
 
 class OpenDDScenario(Scenario):
-
-    def __init__(self, client: carla.Client, *, dataset_dir: Union[str, Path], reward_type: RewardType,
-                 dataset_mode: DatasetMode, place_name: Optional[str] = None):
+    def __init__(
+        self,
+        client: carla.Client,
+        *,
+        dataset_dir: Union[str, Path],
+        reward_type: RewardType,
+        dataset_mode: DatasetMode,
+        place_name: Optional[str] = None,
+    ):
         super().__init__(client)
 
         setup_carla_settings(client, synchronous=True, time_delta_s=DT)

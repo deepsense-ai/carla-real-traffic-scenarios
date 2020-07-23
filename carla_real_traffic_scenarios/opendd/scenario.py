@@ -148,11 +148,13 @@ class OpenDDScenario(Scenario):
                 'timestamp_s': f'{self._recording.timestamp_s:0.3f}',
                 'objid': self._chauffeur.vehicle.id,
                 'dataset_mode': self._dataset_mode.name,
+            },
+            'scenario_data': {
+                'ego_veh': ego_vehicle,
                 'original_veh_transform': original_veh_transform,
                 'original_to_ego_distance': original_veh_transform.location.distance(ego_transform.location)
             },
             'reward_type': self._reward_type.name,
-            'ego_veh': ego_vehicle,
             **done_info
         }
 

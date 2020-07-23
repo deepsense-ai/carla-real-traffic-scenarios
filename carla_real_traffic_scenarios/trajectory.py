@@ -35,11 +35,10 @@ class Trajectory:
         self._length_m = self._s[last_idx]
 
     def find_nearest_trajectory_point(self, transform_carla: carla.Transform) -> Tuple[int, carla.Transform, float]:
-        location_ego = np.round([transform_carla.location.x, transform_carla.location.y], decimals=2)
+        location_ego = np.array([transform_carla.location.x, transform_carla.location.y])
         idx, distance_from_trajectory = _get_nearest_location(self._locations_carla, location_ego)
 
-        s_idx = min(idx, len(self._s) - 1)
-        return self._s[s_idx], self._trajectory_carla[idx], distance_from_trajectory
+        return self._s[idx], self._trajectory_carla[idx], distance_from_trajectory
 
     @property
     def total_length_m(self):

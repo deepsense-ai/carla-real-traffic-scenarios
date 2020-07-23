@@ -44,7 +44,6 @@ class NGSimLaneChangeScenario(Scenario):
         data_dir,
         reward_type: RewardType,
         client: carla.Client,
-        evaluation_scenario_seed: Optional[int] = None
     ):
         super().__init__(client)
         setup_carla_settings(client, synchronous=True, time_delta_s=DT)
@@ -91,8 +90,6 @@ class NGSimLaneChangeScenario(Scenario):
         self._early_stop_monitor = EarlyStopMonitor(vehicle, timeout_s=timeout_s)
 
         while True:
-            if self._evaluation_scenario_seed is not None:
-                random.seed(self._evaluation_scenario_seed)
             self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
             frame_manuveur_start = max(self._lane_change.frame_start - FRAMES_BEFORE_MANUVEUR, 0)
             self._ngsim_recording.reset(timeslot=self._lane_change.timeslot, frame=frame_manuveur_start - 1)

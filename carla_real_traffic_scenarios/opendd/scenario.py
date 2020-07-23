@@ -118,6 +118,7 @@ class OpenDDScenario(Scenario):
 
     def step(self, ego_vehicle: carla.Vehicle) -> ScenarioStepResult:
         ego_transform = ego_vehicle.get_transform()
+        original_veh_transform = self._chauffeur.vehicle.transform_carla.as_carla_transform()
 
         progress = self._get_progress(ego_transform)
         progress_change = max(0, _quantify_progress(progress) - _quantify_progress(self._current_progress))
@@ -147,8 +148,11 @@ class OpenDDScenario(Scenario):
                 'timestamp_s': f'{self._recording.timestamp_s:0.3f}',
                 'objid': self._chauffeur.vehicle.id,
                 'dataset_mode': self._dataset_mode.name,
+                'original_veh_transform': original_veh_transform,
+                'original_to_ego_distance': original_veh_transform.location.distance(ego_transform.location)
             },
             'reward_type': self._reward_type.name,
+            'ego_veh': ego_vehicle,
             **done_info
         }
 

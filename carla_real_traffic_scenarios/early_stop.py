@@ -50,9 +50,8 @@ class EarlyStopMonitor:
         move_away = EarlyStop.NONE
         if self._trajectory:
             *_, distance_m = self._trajectory.find_nearest_trajectory_point(ego_transform)
-            move_away = distance_m > self._max_trajectory_distance_m  # moved_away
-            if move_away:
-                move_away |= EarlyStop.MOVED_TOO_FAR
+            if distance_m > self._max_trajectory_distance_m:
+                move_away = EarlyStop.MOVED_TOO_FAR
                 LOGGER.debug(f'Vehicle moved too far: {distance_m:0.3f}m/{self._max_trajectory_distance_m:0.3f}m')
         return move_away
 
@@ -60,7 +59,7 @@ class EarlyStopMonitor:
         timeout = EarlyStop.NONE
         elapsed_s = self._get_timestamp_s(self._world) - self._start_timestamp_s
         if self._timeout_s is not None and elapsed_s > self._timeout_s:  # timeout
-            timeout |= EarlyStop.TIMEOUT
+            timeout = EarlyStop.TIMEOUT
             LOGGER.debug(f'Timeout elapsed: {elapsed_s:0.3f}s while timeout is set to {self._timeout_s:0.3f}s')
         return timeout
 
@@ -72,8 +71,8 @@ class EarlyStopMonitor:
             # if distance to nearest lane ceneter not exceeds 30% of half of lane width
             probably_is_on_lane = (waypoint.lane_width / 2) * 1.3 > distance_to_lane
             if not probably_is_on_lane:
-                offroad |= EarlyStop.OFFROAD
-            LOGGER.debug(f'Vehicle off-road')
+                offroad = EarlyStop.OFFROAD
+                LOGGER.debug(f'Vehicle off-road')
         return offroad
 
     def _check_collision(self, *_):

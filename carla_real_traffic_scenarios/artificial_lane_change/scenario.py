@@ -23,7 +23,7 @@ FRAMES_BEFORE_MANUVEUR = 50
 FRAMES_AFTER_MANUVEUR = 50
 
 VEHICLE_SLOT_LENGTH_M = 8
-MAX_VEHICLE_RANDOM_SPACE_M = 20
+MAX_VEHICLE_RANDOM_SPACE_M = 15   # with current parameters - quant 5
 MAX_MANEUVER_LENGTH_M = 200
 BIRD_VIEW_HEIGHT_M = 100
 
@@ -47,7 +47,7 @@ def _calc_offset(current_idx, controllers_left, resolution_m):
     slot_length = int(np.ceil(VEHICLE_SLOT_LENGTH_M * m2idx))
 
     max_random_space = int(MAX_VEHICLE_RANDOM_SPACE_M * m2idx)
-    random_space = np.random.randint(0, max_random_space)
+    random_space = np.random.randint(0, max_random_space) if max_random_space else 0
 
     return slot_length + random_space
 
@@ -93,7 +93,7 @@ class ArtificialLaneChangeScenario(Scenario):
 
         env_vehicles_speed_range_mps = SPEED_RANGE_NAMES[speed_range_token]
         self._speed_range_mps = env_vehicles_speed_range_mps
-        self._env_vehicle_column_ahead_range_m = (5, 30)
+        self._env_vehicle_column_ahead_range_m = (30, 50)
 
         route_length_m = max(MAX_MANEUVER_LENGTH_M + BIRD_VIEW_HEIGHT_M,
                              max_env_vehicles_number * (MAX_VEHICLE_RANDOM_SPACE_M + VEHICLE_SLOT_LENGTH_M)) * 3

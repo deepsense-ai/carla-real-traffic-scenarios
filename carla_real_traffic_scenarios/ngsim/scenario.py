@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 import random
 from typing import Optional
 
@@ -44,6 +45,7 @@ class NGSimLaneChangeScenario(Scenario):
         data_dir,
         reward_type: RewardType,
         client: carla.Client,
+        seed=None
     ):
         super().__init__(client)
         setup_carla_settings(client, synchronous=True, time_delta_s=DT)
@@ -90,7 +92,16 @@ class NGSimLaneChangeScenario(Scenario):
         self._early_stop_monitor = EarlyStopMonitor(vehicle, timeout_s=timeout_s)
 
         while True:
+            epseed = int(os.environ.get("epseed"))
+            if epseed:
+                random.seed(epseed)
             self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
+            self._sampled_dataset_excerpt_info = dict(
+                file_suffix=self._lane_change.timeslot.file_suffix,
+                frame_start=self._lane_change.frame_start,
+                original_veh_id=self._lane_change.vehicle_id
+            )
+            print(self._sampled_dataset_excerpt_info)
             frame_manuveur_start = max(self._lane_change.frame_start - FRAMES_BEFORE_MANUVEUR, 0)
             self._ngsim_recording.reset(timeslot=self._lane_change.timeslot, frame=frame_manuveur_start - 1)
             ngsim_vehicles = self._ngsim_recording.step()

@@ -234,7 +234,7 @@ class OpenDDRecording():
 
         self._transformer: Optional[Utm2CarlaMapper] = None
 
-    def reset(self, session_name):
+    def reset(self, session_name, seed=None):
         if self._df is not None:
             del self._df
 
@@ -251,6 +251,8 @@ class OpenDDRecording():
 
         # search for train/validation roundabout pass
         dataset_mode = None
+        if seed is not None:
+            random.seed(seed)
         while dataset_mode != self._dataset_mode:
             ego_id, timestamp_start_s, timestamp_end_s = _find_ego_vehicle_with_time_frame(self.place, self._df)
             dataset_mode = _determine_split(session_name, ego_id, timestamp_start_s, timestamp_end_s)

@@ -1,3 +1,4 @@
+import os
 import logging
 from pathlib import Path
 import random
@@ -100,9 +101,18 @@ class OpenDDScenario(Scenario):
         session_names = self._dataset.session_names
         if self._place_name:
             session_names = [n for n in session_names if self._place_name.lower() in n]
+        epseed = int(os.environ.get("epseed"))
+        if epseed:
+            random.seed(epseed)
         session_name = random.choice(session_names)
-        ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name)
-
+        ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name, seed=epseed)
+        self._sampled_dataset_excerpt_info = dict(
+            session_name=session_name,
+            timestamp_start_s=timestamp_start_s,
+            timestamp_end_s=timestamp_end_s,
+            original_veh_id=ego_id,
+        )
+        print(self._sampled_dataset_excerpt_info)
         env_vehicles = self._recording.step()
         other_vehicles = [v for v in env_vehicles if v.id != ego_id]
         self._carla_sync.step(other_vehicles)

@@ -92,16 +92,15 @@ class NGSimLaneChangeScenario(Scenario):
         self._early_stop_monitor = EarlyStopMonitor(vehicle, timeout_s=timeout_s)
 
         while True:
-            epseed = int(os.environ.get("epseed"))
+            epseed = os.environ.get("epseed")
             if epseed:
-                random.seed(epseed)
+                random.seed(int(epseed))
             self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
             self._sampled_dataset_excerpt_info = dict(
                 file_suffix=self._lane_change.timeslot.file_suffix,
                 frame_start=self._lane_change.frame_start,
                 original_veh_id=self._lane_change.vehicle_id
             )
-            print(self._sampled_dataset_excerpt_info)
             frame_manuveur_start = max(self._lane_change.frame_start - FRAMES_BEFORE_MANUVEUR, 0)
             self._ngsim_recording.reset(timeslot=self._lane_change.timeslot, frame=frame_manuveur_start - 1)
             ngsim_vehicles = self._ngsim_recording.step()
@@ -174,10 +173,8 @@ class NGSimLaneChangeScenario(Scenario):
         done_info = {}
         if done and scenario_finished_with_success:
             done_info[DONE_CAUSE_KEY] = 'success'
-            print('success')
         elif done and early_stop:
             done_info[DONE_CAUSE_KEY] = early_stop.decomposed_name('_').lower()
-            print(early_stop)
         info = {
             'ngsim_dataset': {
                 'road': self._ngsim_dataset.name,

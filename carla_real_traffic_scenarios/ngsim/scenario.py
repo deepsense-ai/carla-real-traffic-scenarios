@@ -6,7 +6,7 @@ from typing import Optional
 
 import carla
 
-from carla_real_traffic_scenarios import DT
+from carla_real_traffic_scenarios import DT, DONE_CAUSE_KEY
 from carla_real_traffic_scenarios.early_stop import EarlyStopMonitor, EarlyStop
 from carla_real_traffic_scenarios.ngsim import FRAMES_BEFORE_MANUVEUR, FRAMES_AFTER_MANUVEUR, NGSimDataset, DatasetMode
 from carla_real_traffic_scenarios.ngsim.ngsim_recording import NGSimRecording, LaneChangeInstant, PIXELS_TO_METERS
@@ -17,7 +17,6 @@ from carla_real_traffic_scenarios.trajectory import LaneAlignmentMonitor, TARGET
 from carla_real_traffic_scenarios.utils.carla import RealTrafficVehiclesInCarla, setup_carla_settings
 from carla_real_traffic_scenarios.utils.collections import find_first_matching
 from carla_real_traffic_scenarios.utils.topology import get_lane_id, get_lane_ids
-from sim2real.runner import DONE_CAUSE_KEY
 
 
 LOGGER = logging.getLogger(__name__)

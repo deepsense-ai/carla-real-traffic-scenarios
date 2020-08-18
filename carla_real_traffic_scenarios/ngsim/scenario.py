@@ -96,6 +96,7 @@ class NGSimLaneChangeScenario(Scenario):
                 random.seed(int(epseed))
             self._lane_change: LaneChangeInstant = random.choice(self._lane_change_instants)
             self._sampled_dataset_excerpt_info = dict(
+                episode_seed=epseed,
                 file_suffix=self._lane_change.timeslot.file_suffix,
                 frame_start=self._lane_change.frame_start,
                 original_veh_id=self._lane_change.vehicle_id

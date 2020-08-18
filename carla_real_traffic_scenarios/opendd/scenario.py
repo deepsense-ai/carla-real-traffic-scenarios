@@ -105,8 +105,10 @@ class OpenDDScenario(Scenario):
             epseed = int(epseed)
             random.seed(epseed)
         session_name = random.choice(session_names)
+        # Another random is used inside
         ego_id, timestamp_start_s, timestamp_end_s = self._recording.reset(session_name=session_name, seed=epseed)
         self._sampled_dataset_excerpt_info = dict(
+            episode_seed=epseed,
             session_name=session_name,
             timestamp_start_s=timestamp_start_s,
             timestamp_end_s=timestamp_end_s,

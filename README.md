@@ -15,13 +15,13 @@ CARLA real traffic scenarios
 - We provide the source code for running NGSim-based scenarios in CARLA. Scenario interface is similar to [openai gym](https://gym.openai.com/) interface
 
 ### Prerequisites
-1. Download and extract CARLA ([0.9.6 download link](https://github.com/carla-simulator/carla/releases/tag/0.9.6)). Then, add PythonAPI wheel to your `PYTHONPATH`:
+1. Download and extract CARLA ([0.9.9.4 download link](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz)). Then, add PythonAPI wheel to your `PYTHONPATH`:
     ```bash
     export CARLA_ROOT=/path/to/your/carla/release-folder
-    export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.6-py3.6-linux-x86_64.egg:$PYTHONPATH
+    export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg:$PYTHONPATH
     ```
 2. You also need to install our asset packages with two new CARLA maps
-    - Download our archive: [Google Drive download link](https://drive.google.com/open?id=1dFnf4jciDu9OsUqP5_FE_LxBf72wyfRJ)
+    - Download our archive: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
     - Move the archive to: `$CARLA_ROOT/Import`
     - Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
 

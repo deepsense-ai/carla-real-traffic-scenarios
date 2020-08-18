@@ -8,7 +8,7 @@ import carla
 import numpy as np
 import scipy.spatial
 
-from carla_real_traffic_scenarios import DT
+from carla_real_traffic_scenarios import DT, DONE_CAUSE_KEY
 from carla_real_traffic_scenarios.early_stop import EarlyStop, EarlyStopMonitor
 from carla_real_traffic_scenarios.ngsim import DatasetMode
 from carla_real_traffic_scenarios.opendd.dataset import OpenDDDataset
@@ -18,7 +18,6 @@ from carla_real_traffic_scenarios.scenario import Scenario, ScenarioStepResult, 
 from carla_real_traffic_scenarios.trajectory import Trajectory
 from carla_real_traffic_scenarios.utils.carla import setup_carla_settings, RealTrafficVehiclesInCarla
 from carla_real_traffic_scenarios.utils.transforms import Vector2
-from sim2real.runner import DONE_CAUSE_KEY
 
 LOGGER = logging.getLogger()
 MAX_DISTANCE_FROM_REF_TRAJECTORY_M = 3

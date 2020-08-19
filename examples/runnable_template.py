@@ -22,7 +22,8 @@ def parser_args():
 
 
 def prepare_ngsim_scenario(client: carla.Client) -> Scenario:
-    data_dir = os.environ["NGSIM_DIR"]
+    data_dir = os.environ.get("NGSIM_DIR")
+    assert data_dir, "Path to the directory with NGSIM dataset is required"
     ngsim_map = NGSimDatasets.list()
     ngsim_dataset = random.choice(ngsim_map)
     client.load_world(ngsim_dataset.carla_map.level_path)
@@ -36,7 +37,8 @@ def prepare_ngsim_scenario(client: carla.Client) -> Scenario:
 
 
 def prepare_opendd_scenario(client: carla.Client) -> Scenario:
-    data_dir = os.environ["OPENDD_DIR"]
+    data_dir = os.environ.get("OPENDD_DIR")
+    assert data_dir, "Path to the directory with openDD dataset is required"
     maps = ["rdb1", "rdb2", "rdb3", "rdb4", "rdb5", "rdb6", "rdb7"]
     map_name = random.choice(maps)
     carla_map = getattr(CarlaMaps, map_name.upper())

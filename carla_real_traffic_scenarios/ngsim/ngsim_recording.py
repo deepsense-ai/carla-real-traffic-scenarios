@@ -239,7 +239,7 @@ class NGSimRecording(Simulator):
 
         for timeslot in self._ngsim_dataset.timeslots:
             file_name = f'{data_dir}/{self._ngsim_dataset.data_dir}/trajectories-{timeslot.file_suffix}.txt'
-            assert isfile(file_name), f'{file_name}.{{txt}} not found.'
+            assert isfile(file_name), f'{file_name} not found.'
 
             LOGGER.info(f'Loading trajectories from {file_name}')
             df = pd.read_csv(file_name, sep=r'\s+', header=None, names=(

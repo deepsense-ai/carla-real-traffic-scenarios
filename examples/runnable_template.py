@@ -92,12 +92,14 @@ if __name__ == "__main__":
         # Ego vehicle replaces one of the real-world vehicles
         scenario.reset(ego_vehicle)
         done = False
+        total_reward = 0
         while not done:
             # Read sensors, use policy to generate action and apply it to control ego agent
             # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0, steer=-1.0))
 
             chauffeur_cmd, reward, done, info = scenario.step(ego_vehicle)
-            print(f"Step: command={chauffeur_cmd.name}, reward={reward}")
+            total_reward += reward
+            print(f"Step: command={chauffeur_cmd.name}, total_reward={total_reward}")
             world.tick()
 
             # Server camera follows ego

@@ -13,7 +13,7 @@ from carla_real_traffic_scenarios.scenario import Scenario
 
 def parser_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", choices=["ngsim", "opendd"], default="ngsim")
+    parser.add_argument("--dataset", choices=["ngsim", "opendd"], default="opendd")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=2000, type=int)
     parser.add_argument("--num-episodes", default=10, type=int)

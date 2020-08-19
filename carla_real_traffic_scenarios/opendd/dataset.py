@@ -141,7 +141,7 @@ class OpenDDDataset:
     def __init__(self, dataset_dir: Union[str, Path]):
         dataset_dir = Path(dataset_dir)
         self.dataset_dir = dataset_dir.as_posix()
-        self.db_path = (dataset_dir / 'rdb1to7_rdb1rdb6rdb7revised.sqlite').as_posix()
+        self.db_path = (dataset_dir / 'rdb1to7.sqlite').as_posix()
         self.session_names = self._fetch_session_names()  # TODO: divide on TRAIN and TEST
         self.places: Dict[str, Place] = self._fetch_places(dataset_dir)
 

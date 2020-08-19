@@ -5,7 +5,12 @@
 
 CARLA real traffic scenarios
 ========================
-![readme-main-cropped](https://user-images.githubusercontent.com/64484917/90624607-7f3cb980-e218-11ea-8877-30c599e76f4f.gif)
+<p align="center">
+  <img width="100%" 
+       height="auto" 
+       alt="readme-main"
+       src="https://user-images.githubusercontent.com/64484917/90624607-7f3cb980-e218-11ea-8877-30c599e76f4f.gif">
+</p>
 
 NGSIM freeway             |  openDD roundabout
 :-------------------------:|:-------------------------:
@@ -19,27 +24,32 @@ NGSIM freeway             |  openDD roundabout
 2. Code that transfers real-world traffic from datasets into CARLA
 3. Scenario API similar to [OpenAI Gym](https://gym.openai.com/)
 
-We've also trained and benchmarked policies on lane change maneuvers and roundabout navigation.
-More details, our article and videos of trained policies are available on [our website](https://sites.google.com/view/carla-real-traffic-scenarios/home).
+We've also trained and benchmarked policies on lane change maneuvers and roundabout navigation tasks.
+More details, our article and videos of trained policies are published on [our website](https://sites.google.com/view/carla-real-traffic-scenarios/home).
 
 ### Prerequisites
 
 `pip install -r requirements.txt`
 
-#### CARLA
+If working on remote servers with no desktop, to download from Google Drive links, just use [gdown](https://pypi.org/project/gdown/), e.g.
+```bash
+pip install gdown
+gdown --id 1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE
+```
+
+#### 1. CARLA
 Download and extract CARLA ([0.9.9.4 download link](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz)). Then, add PythonAPI wheel to your `PYTHONPATH`:
 ```bash
 export CARLA_ROOT=/path/to/your/carla/release-folder
 export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg:$PYTHONPATH
 ```
-#### New maps
+#### 2. Maps
 Install our CARLA package with new maps: 7 roundabout, 2 freeways
     - Download our archive: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
     - Move the archive to: `$CARLA_ROOT/Import`
     - Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
     
-If working on remote servers with no desktop, simply use [gdown](https://pypi.org/project/gdown/).
-#### Datasets
+#### 3. Datasets
 1. Download: [NGSIM](http://bit.ly/PPUU-data), [opendDD](https://drive.google.com/file/d/12laSzLCaJQa-09sXOnbwaR2INzHurVq1/view?usp=sharing)
 2. Unpack NGSIM archive: `tar xf xy-trajectories.tgz`
 3. Unpack openDD archive 
@@ -55,7 +65,7 @@ cd $CARLA_ROOT
 ##### Terminal II
 Wait until server boots up
 ```bash
-python example/example_roundabout_scenario_usage.py
+python examples/runnable_template.py --dataset opendd --num-episodes 5
 ```
 ##### Terminal III
 ```bash

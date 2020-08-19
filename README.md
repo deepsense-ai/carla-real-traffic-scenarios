@@ -31,7 +31,7 @@ More details, our article and videos of trained policies are published on [our w
 
 `pip install -r requirements.txt`
 
-If working on remote servers with no desktop, to download from Google Drive links, just use [gdown](https://pypi.org/project/gdown/), e.g.
+If working on remote servers with no desktop, use [gdown](https://pypi.org/project/gdown/) to download from Google Drive links, e.g.
 ```bash
 pip install gdown
 gdown --id 1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE
@@ -44,15 +44,13 @@ export CARLA_ROOT=/path/to/your/carla/release-folder
 export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg:$PYTHONPATH
 ```
 #### 2. Maps
-Install our CARLA package with new maps: 7 roundabout, 2 freeways
-    - Download our archive: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
-    - Move the archive to: `$CARLA_ROOT/Import`
-    - Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
+Install our CARLA package with new maps: 7 roundabout, 2 freeways 
+- Download our archive: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
+- Move the archive to: `$CARLA_ROOT/Import`
+- Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
     
 #### 3. Datasets
-1. Download: [NGSIM](http://bit.ly/PPUU-data), [opendDD](https://drive.google.com/file/d/12laSzLCaJQa-09sXOnbwaR2INzHurVq1/view?usp=sharing)
-2. Unpack NGSIM archive: `tar xf xy-trajectories.tgz`
-3. Unpack openDD archive 
+Download and unpack: [NGSIM](http://bit.ly/PPUU-data), [opendDD](https://drive.google.com/file/d/12laSzLCaJQa-09sXOnbwaR2INzHurVq1/view?usp=sharing)
 
 ### Quickstart
 
@@ -63,42 +61,27 @@ cd $CARLA_ROOT
 ```
 
 ##### Terminal II
-Wait until server boots up
+Wait until server boots up. Feel free to play with the code.
 ```bash
+
+# Directory which contain "rdb1to7.sqlite" and "image_georeferenced/"
+export OPENDD_DIR=...
+
+# Directory which contain "i80/" and "us101/"
+export NGSIM_DIR=...
 python examples/runnable_template.py --dataset opendd --num-episodes 5
 ```
-##### Terminal III
-```bash
-# (wait until scenario script connects successfully, map rendering may tak a while)
-python example/manual_driving.py --res 900x500
-```
-Code tested with CARLA 0.9.6.
-
-### Real-traffic scenarios
-
-1. Download dataset: [Google Drive download link](http://bit.ly/PPUU-data)
-2. openDD
-    https://drive.google.com/file/d/12laSzLCaJQa-09sXOnbwaR2INzHurVq1/view?usp=sharing
-2. Unpack: `tar xf xy-trajectories.tgz`
-3. Set environment variables:
-#### TODO
-The directory must contain **sqlite file** and subdirectory `image_georeferenced`
-```bash
-export OPENDD_DIR=.
-export NGSIM_DIR=~/Downloads/xy-trajectories
-
-```
-3. Run the example:
-```bash
-python examples/runnable_template.py --dataset opendd --num-episodes 5
-```
-* `python example/example_scenario_usage.py` - shows how to run scenario in training loop
-* `python example/example_replay_ngsim_in_carla.py` - shows how to replay NGSim dataset in CARLA. It was used to generated GIF in this README file
-
 
 ### Feedback
-We'd be happy to get any kind of feedback on what should be improved, what's not working etc.
-
+We encourage you send us any kind of feedback on what should be improved, what's not working etc.
 
 ### Credits
 Code for interfacing with NGSIM dataset was based on https://github.com/Atcold/pytorch-PPUU
+
+Authors (cannot be disclosed yet):
+- Anonoymous 1 (anonoymous@email.com)
+- Anonoymous 2 (anonoymous@email.com)
+- Anonoymous 3 (anonoymous@email.com)
+- Anonoymous 4 (anonoymous@email.com)
+- Anonoymous 5 (anonoymous@email.com)
+- Anonoymous 6 (anonoymous@email.com)

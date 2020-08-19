@@ -13,11 +13,11 @@ with open('requirements.txt') as f:
 
 setup(
     name='carla_real_traffic_scenarios',
-    version='0.3.0',
+    version='1.0.0',
     long_description=readme,
     author='TODO',
     author_email='TODO',
-    url='TODO',
+    url='https://sites.google.com/view/carla-real-traffic-scenarios/home',
     license=license,
     install_requires=requirements,
     packages=find_packages(exclude=('tests', 'docs')),

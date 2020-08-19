@@ -62,9 +62,10 @@ class RealTrafficVehiclesInCarla:
                 )
                 self._vehicle_by_vehicle_id[real_vehicle.id] = carla_vehicle
 
-            if real_vehicle.debug:
-                self._world.debug.draw_string((target_transform.position + Vector3(2, 0, 4)).as_carla_location(),
-                                              str(real_vehicle.debug))
+            # Debug-only
+            # if real_vehicle.debug:
+            #     self._world.debug.draw_string((target_transform.position + Vector3(2, 0, 4)).as_carla_location(),
+            #                                   str(real_vehicle.debug))
 
             now_vehicle_ids = {v.id for v in vehicles}
             previous_vehicles_ids = set(self._vehicle_by_vehicle_id.keys())

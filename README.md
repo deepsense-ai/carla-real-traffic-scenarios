@@ -25,7 +25,8 @@ NGSIM freeway             |  openDD roundabout
 3. Scenario API similar to [OpenAI Gym](https://gym.openai.com/)
 
 We've also trained and benchmarked policies on lane change maneuvers and roundabout navigation tasks.
-More details, our article and videos of trained policies are published on [our website](https://sites.google.com/view/carla-real-traffic-scenarios/home).
+
+More details, our article and videos of trained policies are **published on [our website](https://sites.google.com/view/carla-real-traffic-scenarios/home).**
 
 ### Prerequisites
 

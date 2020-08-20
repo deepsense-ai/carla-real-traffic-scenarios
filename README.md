@@ -30,7 +30,7 @@ More details, our article and videos of trained policies are **published on [our
 
 ### Prerequisites
 ```bash
-git clone https://github.com/deepsense-ai/carla-real-traffic-scenarios.git && cd carla-real-traffic-scenarios.git
+git clone https://github.com/deepsense-ai/carla-real-traffic-scenarios.git && cd carla-real-traffic-scenarios
 pip install -r requirements.txt
 ```
 

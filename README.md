@@ -29,8 +29,10 @@ We've also trained and benchmarked policies on lane change maneuvers and roundab
 More details, our article and videos of trained policies are **published on [our website](https://sites.google.com/view/carla-real-traffic-scenarios/home).**
 
 ### Prerequisites
-
-`pip install -r requirements.txt`
+```bash
+git clone https://github.com/deepsense-ai/carla-real-traffic-scenarios.git && cd carla-real-traffic-scenarios.git
+pip install -r requirements.txt
+```
 
 If working on remote servers with no desktop, use [gdown](https://pypi.org/project/gdown/) to download from Google Drive links, e.g.
 ```bash
@@ -41,6 +43,10 @@ gdown --id 1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE
 #### 1. CARLA
 Download and extract CARLA ([0.9.9.4 download link](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz)). Then, add PythonAPI wheel to your `PYTHONPATH`:
 ```bash
+cd Downloads
+wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz
+mkdir CARLA_0.9.9.4 && tar zxvf CARLA_0.9.9.4.tar.gz --directory CARLA_0.9.9.4
+
 export CARLA_ROOT=/path/to/your/carla/release-folder
 export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg:$PYTHONPATH
 ```

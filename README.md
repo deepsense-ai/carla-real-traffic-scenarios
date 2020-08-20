@@ -50,8 +50,15 @@ Install our CARLA package with new maps: 7 roundabout, 2 freeways
 - Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
     
 #### 3. Datasets
-Download and unpack: [NGSIM](http://bit.ly/PPUU-data), [opendDD](https://drive.google.com/file/d/12laSzLCaJQa-09sXOnbwaR2INzHurVq1/view?usp=sharing)
+Download and unpack: [NGSIM](https://drive.google.com/file/d/1xg6lV4Yc7dzXLMuaE4L8cWzgVzVPoj82/view?usp=sharing), [opendDD](https://drive.google.com/file/d/1EhJdkWLUF_m8mQZVGvm-MFnA1CfxO64u/view?usp=sharing)
+```
+sudo apt install p7zip-full
 
+# no space after -o
+7z x ~/Downloads/openDD.7z -oopenDD
+
+mkdir NGSIM && tar zxvf ~/Downloads/NGSIM.tgz --strip-components 1 --directory NGSIM
+```
 ### Quickstart
 
 ##### Terminal I
@@ -64,11 +71,11 @@ cd $CARLA_ROOT
 Wait until server boots up. Feel free to play with the code.
 ```bash
 
-# Directory which contain "rdb1to7.sqlite" and "image_georeferenced/"
-export OPENDD_DIR=...
+# Directory which contains "rdb1to7.sqlite" and "image_georeferenced/"
+export OPENDD_DIR=~/Downloads/openDD
 
-# Directory which contain "i80/" and "us101/"
-export NGSIM_DIR=...
+# Directory which contains "i80/" and "us101/"
+export NGSIM_DIR=~/Downloads/NGSIM
 python examples/runnable_template.py --dataset opendd --num-episodes 5
 ```
 

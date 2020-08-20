@@ -55,7 +55,8 @@ export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_6
 #### 2. Maps
 Download and import our CARLA package with new maps: 7 roundabout, 2 freeways: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
 ```bash
-$CARLA_ROOT/Import/ImportAssets.sh
+mv ~/Downloads/carla-package-NGSIM-openDD.tar.gz $CARLA_ROOT/Import/
+$CARLA_ROOT/ImportAssets.sh
 ```
     
 #### 3. Datasets

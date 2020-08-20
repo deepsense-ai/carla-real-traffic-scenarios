@@ -43,21 +43,23 @@ gdown --id 1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE
 #### 1. CARLA
 Download and extract CARLA ([0.9.9.4 download link](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz)). Then, add PythonAPI wheel to your `PYTHONPATH`:
 ```bash
-cd Downloads
+cd ~/Downloads
 wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz
-mkdir CARLA_0.9.9.4 && tar zxvf CARLA_0.9.9.4.tar.gz --directory CARLA_0.9.9.4
 
-export CARLA_ROOT=/path/to/your/carla/release-folder
+export CARLA_ROOT=/home/$USER/Downloads/CARLA_0.9.9.4
+mkdir -p $CARLA_ROOT;
+tar zxvf CARLA_0.9.9.4.tar.gz --directory $CARLA_ROOT
+
 export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg:$PYTHONPATH
 ```
 #### 2. Maps
-Install our CARLA package with new maps: 7 roundabout, 2 freeways 
-- Download our archive: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
-- Move the archive to: `$CARLA_ROOT/Import`
-- Ingest into CARLA release: `cd Import && ./ImportAssets.sh`
+Download and import our CARLA package with new maps: 7 roundabout, 2 freeways: [Google Drive download link](https://drive.google.com/file/d/1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE/view?usp=sharing)
+```bash
+$CARLA_ROOT/Import/ImportAssets.sh
+```
     
 #### 3. Datasets
-Download and unpack: [NGSIM](https://drive.google.com/file/d/1xg6lV4Yc7dzXLMuaE4L8cWzgVzVPoj82/view?usp=sharing), [opendDD](https://drive.google.com/file/d/1EhJdkWLUF_m8mQZVGvm-MFnA1CfxO64u/view?usp=sharing)
+Download and extract: [NGSIM](https://drive.google.com/file/d/1xg6lV4Yc7dzXLMuaE4L8cWzgVzVPoj82/view?usp=sharing), [opendDD](https://drive.google.com/file/d/1EhJdkWLUF_m8mQZVGvm-MFnA1CfxO64u/view?usp=sharing)
 ```
 sudo apt install p7zip-full
 

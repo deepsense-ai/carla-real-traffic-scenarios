@@ -53,7 +53,7 @@ tar zxvf CARLA_0.9.9.4.tar.gz --directory $CARLA_ROOT
 export PYTHONPATH=$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg:$PYTHONPATH
 ```
 #### 2. Maps
-Download and import our CARLA package with new maps: 7 roundabout, 2 freeways: [Google Drive download link](https://drive.google.com/file/d/1CIM4_OuA1VY-otK7enpr_IuAwGpTJoyF/view?usp=sharing)
+Download and import our CARLA package with new maps: 7 roundabout, 2 freeways: [Download link](https://deepsense.ai/data/carla-package-NGSIM-openDD.tar.gz)
 ```bash
 mv ~/Downloads/carla-package-NGSIM-openDD.tar.gz $CARLA_ROOT/Import/
 $CARLA_ROOT/ImportAssets.sh

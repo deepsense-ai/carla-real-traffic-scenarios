@@ -60,7 +60,7 @@ $CARLA_ROOT/ImportAssets.sh
 ```
     
 #### 3. Datasets
-Download and extract: [NGSIM](https://drive.usercontent.google.com/download?id=126SkGEa0eVk4GGsw7emYuyDhZI6qM4MN&export=download), [opendDD](hhttps://drive.usercontent.google.com/download?id=1qfW5YdosTKD-GlZj5OjJ5Ag77Vv1oPoT&export=download&authuser=0)
+Download and extract: [NGSIM](https://drive.usercontent.google.com/download?id=126SkGEa0eVk4GGsw7emYuyDhZI6qM4MN&export=download), [opendDD](https://drive.usercontent.google.com/download?id=1qfW5YdosTKD-GlZj5OjJ5Ag77Vv1oPoT&export=download&authuser=0)
 ```
 sudo apt install p7zip-full
 

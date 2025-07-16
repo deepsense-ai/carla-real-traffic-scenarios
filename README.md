@@ -41,10 +41,10 @@ gdown --id 1FCHL7YJk12AwfxuMPmwXPJj71n3mwSxE
 ```
 
 #### 1. CARLA
-Download and extract CARLA ([0.9.9.4 download link](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz)). Then, add PythonAPI wheel to your `PYTHONPATH`:
+Download and extract CARLA ([0.9.9.4 download link](https://carla-releases.b-cdn.net/Linux/CARLA_0.9.9.4.tar.gz)). Then, add PythonAPI wheel to your `PYTHONPATH`:
 ```bash
 cd ~/Downloads
-wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.9.4.tar.gz
+wget https://carla-releases.b-cdn.net/Linux/CARLA_0.9.9.4.tar.gz
 
 export CARLA_ROOT=/home/$USER/Downloads/CARLA_0.9.9.4
 mkdir -p $CARLA_ROOT;
@@ -60,7 +60,7 @@ $CARLA_ROOT/ImportAssets.sh
 ```
     
 #### 3. Datasets
-Download and extract: [NGSIM](https://drive.google.com/file/d/1xg6lV4Yc7dzXLMuaE4L8cWzgVzVPoj82/view?usp=sharing), [opendDD](https://drive.google.com/file/d/1EhJdkWLUF_m8mQZVGvm-MFnA1CfxO64u/view?usp=sharing)
+Download and extract: [NGSIM](https://drive.usercontent.google.com/download?id=126SkGEa0eVk4GGsw7emYuyDhZI6qM4MN&export=download), [opendDD](hhttps://drive.usercontent.google.com/download?id=1qfW5YdosTKD-GlZj5OjJ5Ag77Vv1oPoT&export=download&authuser=0)
 ```
 sudo apt install p7zip-full
 

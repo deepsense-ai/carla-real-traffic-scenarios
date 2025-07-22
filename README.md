@@ -26,7 +26,7 @@ NGSIM freeway             |  openDD roundabout
 
 We've also trained and benchmarked policies on lane change maneuvers and roundabout navigation tasks.
 
-More details, our article and videos of trained policies are **published on [our website](https://sites.google.com/view/carla-real-traffic-scenarios/home).**
+More details, our article and videos of trained policies are **published on [our website](https://sites.google.com/deepsense.ai/carla-real-traffic-scenarios/home).**
 
 ### Prerequisites
 ```bash
